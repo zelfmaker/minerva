@@ -308,12 +308,14 @@ module hotend_cage(
 	d_fan_mount_hole,
 	cc_mount_holes,
 	d_fan,
+	y_offset,
+	z_offset,
 	dalekify = false,
 	vent = false
 ) {
 
-	y_offset_fan = d_hotend_side / 2 + t_heat_x_jhead / 2 * sin(a_fan_mount);
-	z_offset_fan = t_effector;
+	y_offset_fan = d_hotend_side / 2 + t_heat_x_jhead / 2 * sin(a_fan_mount) + y_offset;
+	z_offset_fan = z_offset + t_effector;
 	h_thickness = t_hotend_cage / cos(a_fan_mount); // length of hypoteneus based upon thickness of cage
 	t_fan_mount = 3;
 	h_fan_mount = t_fan_mount / 2 / cos(a_fan_mount);
@@ -329,6 +331,8 @@ module hotend_cage(
 					y_offset_fan = y_offset_fan,
 					z_offset_fan = z_offset_fan,
 					a_fan_mount = a_fan_mount,
+					y_offset = y_offset,
+					z_offset = z_offset,
 					dalekify = dalekify);
 
 				hotend_cage_shape(
@@ -337,9 +341,12 @@ module hotend_cage(
 					l_fan = l_fan - 6,
 					y_offset_fan = y_offset_fan + 0.5,
 					z_offset_fan = z_offset_fan,
+					y_offset = y_offset,
+					z_offset = z_offset,
 					a_fan_mount = a_fan_mount);
 			}
 
+			// Fan mounting tabs.
 			translate([0, y_offset_fan, (l_fan > h_thickness) ? z_offset_fan + (l_fan - h_thickness) / 2: z_offset_fan]) {
 				rotate([90 + a_fan_mount, 0, 0]) {
 					for (i = [-1, 1]) {
@@ -363,6 +370,7 @@ module hotend_cage(
 			}
 		}
 
+		// Fan mounting holes.
 		translate([0, y_offset_fan, (l_fan > h_thickness) ? z_offset_fan + (l_fan - h_thickness) / 2: z_offset_fan]) {
 			rotate([90 + a_fan_mount, 0, 0]) {
 				for (i = [0:3]) {
@@ -409,6 +417,8 @@ module hotend_cage_shape(
 	y_offset_fan,
 	z_offset_fan,
 	a_fan_mount,
+	y_offset = 5,
+	z_offset = 10,
 	dalekify = false) {
 
 	h_thickness = thickness / cos(a_fan_mount); // length of hypoteneus based upon thickness of cage
@@ -417,8 +427,13 @@ module hotend_cage_shape(
 
 	union() {
 		hull() {
-			cylinder(r1 = d_hotend_side / 2 + r_flare, r2 = d_hotend_side / 2, h = thickness, center = true, $fn = (dalekify) ? 12 : 48);
-
+			// Bottom ring.
+			translate([0, 0, -thickness / 2])
+				cylinder(d = d_hotend_side + 2 * r_flare, h = .1, $fn = dalekify ? 12 : $fn);
+			// Top ring.
+			translate([0, y_offset, thickness / 2 + z_offset])
+				cylinder(d = d_hotend_side, h = .1, $fn = dalekify ? 12 : $fn);
+			// Fan plate.
 			translate([0, y_offset_fan, (l_fan > h_thickness) ? z_offset_fan + (l_fan - h_thickness) / 2 : z_offset_fan])
 				rotate([90 + a_fan_mount, 0, 0])
 					round_box(
@@ -447,6 +462,8 @@ module hotend_mount(dalekify = false,
 	vent = false,
 	render_thread = true,
 	headless = true,
+	y_offset = -5,
+	z_offset = 10
 ) {
 	difference() {
 		union() {
@@ -458,17 +475,19 @@ module hotend_mount(dalekify = false,
 							d_fan_mount_hole = 3.4,
 							cc_mount_holes = 32,
 							d_fan = 38,
+							y_offset = y_offset,
+							z_offset = z_offset,
 							dalekify = dalekify,
 							vent = vent
 						);
 					}
 
 					// hot end retainer body
-					translate([0, 0, z_offset_retainer]) {
+					translate([0, y_offset, z_offset + z_offset_retainer]) {
 						difference() {
 							cylinder(r1 = r1_retainer_body, r2 = r2_retainer_body, h = h_retainer_body + r2_retainer_body - countersink_quickrelease);
 							if (headless) {
-								translate([0, 0, h_groove_jhead + h_groove_offset_jhead + 5])
+								translate([0, 0, h_groove_jhead + h_groove_offset_jhead - .1])
 									cylinder(r = r1_retainer_body, h = h_retainer_body);
 							}
 						}
@@ -486,7 +505,7 @@ module hotend_mount(dalekify = false,
 					cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 1.5);
 
 				// hot end mounting parts
-				translate([0, 0, z_offset_retainer]) {
+				translate([0, y_offset, z_offset + z_offset_retainer]) {
 					// Thin part of the hot end.
 					translate([0, 0, -1])
 						hull()
@@ -565,17 +584,17 @@ module hotend_mount(dalekify = false,
 
 			translate([0, 0, z_offset_retainer - 1.5 * layer_height]) {
 				// floor for retainer body
-				translate([0, d_hotend_side / 2 - 2, 0])
+				translate([0, y_offset + d_hotend_side / 2 - 2, z_offset])
 						cube([l_fan - 5, 7, 2 * layer_height], center = true);
-				translate([0, -d_large_jhead / 2 + 5, 0])
+				translate([0, y_offset - d_large_jhead / 2 + 5, z_offset])
 						cube([l_fan - 18, 4, 2 * layer_height], center = true);
 			}
-			translate([0, d_large_jhead / 2 + 2, z_offset_retainer + h_groove_offset_jhead + h_groove_jhead + layer_height])
+			translate([0, y_offset + d_large_jhead / 2 + 2, z_offset_retainer + h_groove_offset_jhead + h_groove_jhead + layer_height + z_offset])
 				cube([l_fan - 5, 8, 2 * layer_height], center = true);
 		} // end floor union
 		// Screw holes for hot end retainer
 		for (x = [-1, 1]) {
-			translate([x * (d_large_jhead + d_M3_screw * 2) / 2, d_large_jhead / 2, z_offset_retainer + h_retainer / 2]) {
+			translate([x * (d_large_jhead + d_M3_screw * 2) / 2, y_offset + d_large_jhead / 2, z_offset + z_offset_retainer + h_retainer / 2]) {
 				translate([0, 1, 0]) {
 					rotate([90, 0, 0])
 						cylinder(d = d_M3_screw, h = h_retainer_body * 2);
@@ -590,7 +609,7 @@ module hotend_mount(dalekify = false,
 }
 
 // tool_mount_body is the shape forming the base of a tool mount to be used on a tool end effector
-module tool_mount_body(h_effector_tool_mount, d_effector_tool_magnet_mount) {
+module tool_mount_body(d_effector_tool_magnet_mount, h_effector_tool_mount) {
 	union() {
 		hull() {
 			for (i = [0:2]) {
@@ -637,30 +656,38 @@ module tool_mount_bearing_cage(d_effector_tool_magnet_mount, h_effector_tool_mou
 }
 
 // magnet_mount is the shape of the bosy and pocket into which magnets are mounted
-module magnet_mount(r_pad, h_pad) {
+module magnet_mount(r_pad, h_pad, relief_only = false) {
 	// this places the pivot point at the origin
-	translate([0, 0, h_magnet / 2 - d_bearing_with_magnet + d_ball_bearing / 2]) {
-		difference() {
-			translate([0, 0,  - h_pad / 2])
-				cylinder(r = od_magnet / 2 + r_pad, h = h_magnet + h_pad, center = true);
+	if (relief_only) {
+		translate([0, 0, h_magnet / 2 - d_bearing_with_magnet + d_ball_bearing / 2]) {
+			translate([0, 0, 10]) {
+				cylinder(r1 = od_magnet / 2 + 0.25, r2 = od_magnet / 2, h = h_magnet + 20, center = true);
+			}
+		}
+	}
+	else {
+		translate([0, 0, h_magnet / 2 - d_bearing_with_magnet + d_ball_bearing / 2]) {
+			difference() {
+				translate([0, 0, -h_pad / 2])
+					cylinder(r = od_magnet / 2 + r_pad, h = h_magnet + h_pad, center = true);
 
 				translate([0, 0, 1])
 					cylinder(r1 = od_magnet / 2 + 0.25, r2 = od_magnet / 2, h = h_magnet + 2, center = true);
-		}
-/*
-		// magnet and ball bearing
-		color([0.7, 0.7, 0.7])
-			union() {
-				difference() {
-					cylinder(r = od_magnet / 2, h = h_magnet, center = true);
-
-					cylinder(r = od_magnet / 4, h = h_magnet + 1, center = true);
-				}
-
-				translate([0, 0, -h_magnet / 2 + d_bearing_with_magnet - d_ball_bearing / 2])
-					sphere(r = d_ball_bearing / 2);
 			}
-//*/
+			// magnet and ball bearing
+			if (false) {
+				%union() {
+					difference() {
+						cylinder(r = od_magnet / 2, h = h_magnet, center = true);
+
+						cylinder(r = od_magnet / 4, h = h_magnet + 1, center = true);
+					}
+
+					translate([0, 0, -h_magnet / 2 + d_bearing_with_magnet - d_ball_bearing / 2])
+						sphere(r = d_ball_bearing / 2);
+				}
+			}
+		}
 	}
 }
 
@@ -670,29 +697,24 @@ module effector_base(large = false) {
 
 	difference() {
 		union() {
-			// magnet mounts are always in the same position
-			effector_tierod_magnets();
+			difference() {
+				// magnet mounts are always in the same position
+				effector_tierod_magnets();
 
-			if (large){
-				// knock off the edges where the magnet mounts are located
-				difference() {
-					cylinder(r = (h_triangle_inner + od_magnet) / 2 + r_pad_effector_magnet_mount, h = t_effector, center = true);
-
-					for (i = [0:2])
-						rotate([0, 0, i * 120 + 60])
-							translate([0, (h_triangle_inner + od_magnet) / 2 + r_pad_effector_magnet_mount, 0])
-								for (j = [-1, 1])
-									translate([j * 6, 0, 0])
-										rotate([0, j * (90 - tierod_angle), 0])
-											cylinder(r = od_magnet / 2, h = 8);
-				}
+				// need to flatten base
+				translate([0, 0, -t_effector * 5])
+					cylinder(r = r_effector * 2, h = t_effector * 5);
 			}
 
+			if (large){
+				r = sqrt(r_effector * r_effector + l_effector * l_effector / 4);
+				cylinder(r1 = r, r2 = r - od_magnet / 2, h = t_effector);
+			}
 			else {
 				// inner portion of effector
 				difference() {
-					translate([0, r_triangle_middle - h_triangle_inner, -1])
-						linear_extrude(height = t_effector + 1)
+					translate([0, r_triangle_middle - h_triangle_inner, 0])
+						linear_extrude(height = t_effector)
 							equilateral(h_triangle_inner);
 
 					// round the triangle apexes
@@ -704,30 +726,33 @@ module effector_base(large = false) {
 			}
 
 			// put an index on the side normal the y-axis
-			translate([5 * tan(30), (large) ? (h_triangle_inner + od_magnet) / 2 + r_pad_effector_magnet_mount - 1: h_triangle_inner * tan(30) * tan(30) - 1, -1])
+			translate([5 * tan(30), (large) ? (h_triangle_inner + od_magnet) / 2 + r_pad_effector_magnet_mount - 1: h_triangle_inner * tan(30) * tan(30) - 1, 0])
 				rotate([0, 0, 60])
-					linear_extrude(height = t_effector + 2)
+					linear_extrude(height = t_effector + 1)
 						equilateral(5);
 		}
-
-		// need to flatten base
-		translate([0, 0, -t_effector * 5])
-			cylinder(r = r_effector * 2, h = t_effector * 5);
+		effector_tierod_magnets(relief_only = true);
 	}
 }
 
-module effector_tierod_magnets() {
-	translate([0, 0, h_effector_magnet_mount])
-		for (i = [0:2])
-			rotate([0, 0, i * 120])
-				translate([0, r_effector, 0])
-						rotate([tierod_angle - 90, 0, 0])
-							for (j = [-1, 1])
-								translate([j * (l_effector) / 2, 0, 0])
-									magnet_mount(r_pad = r_pad_effector_magnet_mount, h_pad = h_effector_magnet_mount);
+module effector_tierod_magnets(relief_only = false) {
+	translate([0, 0, h_effector_magnet_mount]) {
+		for (i = [0:2]) {
+			rotate([0, 0, i * 120]) {
+				translate([0, r_effector, 0]) {
+					rotate([tierod_angle - 90, 0, 0]) {
+						for (j = [-1, 1]) {
+							translate([j * (l_effector) / 2, 0, 0])
+								magnet_mount(r_pad = r_pad_effector_magnet_mount, h_pad = h_effector_magnet_mount, relief_only = relief_only);
+						}
+					}
+				}
+			}
+		}
+	}
 }
 
-module dog_relief(l, nuts = false) {
+module dog_relief(l, nuts = false, extra = -1) {
 	translate([-belt_height - belt_extra, -1, -1])
 		cube([belt_height - belt_tooth_depth + belt_extra, l + 2, h_belt + 1]);
 	intersection() {
@@ -743,7 +768,7 @@ module dog_relief(l, nuts = false) {
 			rotate([-90, 0, 0]) {
 				cylinder(d = d_M3_screw, h = l + 2);
 				if (nuts) {
-					translate([0, 0, l_belt_dog + 10 + 6 + 1])
+					translate([0, 0, (extra >= 0 ? l_belt_dog + 10 + 6 + 1 : 7)])
 						rotate([0, 0, 30])
 							cylinder(d = d_M3_nut, h = h_M3_nut + 1, $fn = 6);
 				}
@@ -755,63 +780,84 @@ module dog_relief(l, nuts = false) {
 // carriage_body renders the solid parts of the carriage with relief dor the end stop adjustment screw
 module carriage_body(limit_switch_mount = true, extra = 0, name) {
 	total_h = h_carriage + (extra >= 0 ? h_carriage + extra : 0);
+	e = (extra >= 0 ? 1 : -1);
 	difference() {
 		union() {
 			// bearing saddles
 			for (i = [-1, 1])
-				translate([i * cc_guides / 2, 0, -h_carriage / 2])
-					cylinder(r = od_lm8uu / 2 + 3, h = total_h);
+				translate([i * cc_guides / 2, 0, -h_carriage / 2]) {
+					hull() {
+						translate([i * 2, 0, 0])
+							cylinder(r = od_lm8uu / 2 + 3, h = total_h);
+						translate([i * (-od_lm8uu / 2 - 5), -od_lm8uu / 2 - 3, 0])
+							cube([1, od_lm8uu + 2 * 3, total_h]);
+					}
+				}
 
 			// boss for the limit switch engagement screw
-			if (limit_switch_mount)
-				translate([l_effector / 2 - limit_x_offset, y_web, -h_carriage / 2])
+			if (limit_switch_mount) {
+				translate([e * (l_effector / 2 - limit_x_offset), y_web, e * -h_carriage / 2]) {
 					difference() {
 						hull() {
-							for (i = [0, 1]) {
-								translate([0, i * (limit_y_offset - y_web), 0])
-									cylinder(r1 = d_M3_screw / 2 + 3, r2 = d_M3_screw / 2 + 2, h = 7);
+							rotate([0, e * 90 - 90, 0]) {
+								for (i = [0, 1]) {
+									translate([0, i * (limit_y_offset - y_web), 0])
+										cylinder(r1 = d_M3_screw / 2 + 3, r2 = d_M3_screw / 2 + 2, h = 7);
+								}
+								if (extra < 0) {
+									translate([0, 0, h_carriage * .8])
+										cylinder(r = .1, h = .1);
+								}
 							}
 						}
 
-						translate([-(d_M3_screw + 5) / 2, 0, -3.5 - 1])
+						translate([-(d_M3_screw + 5) / 2, 0, -total_h - 1])
 							cube([d_M3_screw + 5, d_M3_screw + 5, total_h + 2]);
 					}
+				}
+			}
 
 			// web
 			translate([-cc_guides / 2, y_web - w_carriage_web / 2, -h_carriage / 2])
 				cube([cc_guides, w_carriage_web, total_h]);
 			// name
 			translate([0, y_web - w_carriage_web / 2 + 1, -h_carriage / 2 + total_h / 2]) {
-				rotate([90, 180, 0]) {
+				rotate([90, 90 + e * 90, 0]) {
 					linear_extrude(height = 2) {
-						scale(5)
+						scale(4 + e)
 							text(name, halign = "center", valign = "center");
 					}
 				}
 			}
 			// belt dog
-			translate([d_pulley / 2, -h_belt / 2, -h_carriage / 2]) {
+			translate([e * d_pulley / 2, -h_belt / 2, -h_carriage / 2]) {
 				difference() {
 					union() {
-						offset = l_belt_dog + 10;
-						translate([-d_M3_washer * 1.5, y_web + h_belt / 2, offset]) {
-							w = cc_guides / 2 + (cc_belt_terminator + d_M3_washer) / 2;
+						offset = (extra >= 0 ? l_belt_dog + 10 : h_carriage - 6 - h_M3_nut);
+						w = cc_guides / 2 + (cc_belt_terminator + d_M3_washer) / 2;
+						translate([-cc_guides / 2, y_web + h_belt / 2, offset]) {
 							hull() {
 								cube([w, -y_web + h_belt / 2, 6 + h_M3_nut]);
 								translate([0, 0, -8])
 									cube([w, .1, .1]);
 							}
-							hull() {
-								translate([0, 0, 26])
-									cube([w, -y_web + h_belt / 2, total_h - offset - 26]);
-								translate([0, 0, 6 + h_M3_nut - .1])
-									cube([w, .1, .1]);
+							if (extra >= 0) {
+								hull() {
+									translate([0, 0, 26])
+										cube([w, -y_web + h_belt / 2, total_h - offset - 26]);
+									translate([0, 0, 6 + h_M3_nut - .1])
+										cube([w, .1, .1]);
+								}
 							}
 						}
+						if (extra < 0) {
+							translate([-cc_guides / 2, y_web + h_belt / 2, 0])
+								cube([w, -y_web + h_belt / 2, 6 + h_M3_nut]);
+						}
 					}
-					translate([0, h_belt, total_h]) {
-						rotate([90, 180, 0])
-							dog_relief(total_h, true);
+					translate([0, h_belt, total_h / 2 + e * total_h / 2]) {
+						rotate([90, 90 + 90 * e, 0])
+							dog_relief(total_h, true, extra);
 					}
 				}
 			}
@@ -819,10 +865,8 @@ module carriage_body(limit_switch_mount = true, extra = 0, name) {
 
 		// end stop screw
 		if (limit_switch_mount) {
-			translate([l_effector / 2 - limit_x_offset, limit_y_offset, 0]) {
-				translate([0, 0, -total_h / 2 - 1])
-					cylinder(r = d_M3_screw / 2 - 0.4, h = total_h + 2);
-			}
+			translate([e * (l_effector / 2 - limit_x_offset), limit_y_offset, -total_h / 2 - 1])
+				cylinder(r = d_M3_screw / 2 - 0.4, h = total_h + 2);
 		}
 	}
 }
@@ -832,7 +876,7 @@ module carriage_bearing_relief(extra = 0) {
 	total_h = h_carriage + (extra >= 0 ? h_carriage + extra : 0);
 	union() {
 		// bearing pockets and guide rod relief
-		for (i = [-1, 1])
+		for (i = [-1, 1]) {
 			translate([i * cc_guides / 2, 0, -h_carriage / 2 - 1]) {
 				for (j = [0, 1])
 					for (h = extra >= 0 ? [0, total_h - h_carriage] : [0]) {
@@ -846,10 +890,11 @@ module carriage_bearing_relief(extra = 0) {
 					translate([0, od_lm8uu / 2 + 3, 0])
 						cylinder(d = d_guides + 2, h = total_h + 2);
 				}
-
-				translate([-od_lm8uu / 2 - 4, -od_lm8uu / 4 - 2.5 + 10, 0])
-					cube([od_lm8uu + 8, od_lm8uu / 2 + 5, total_h + 2]);
 			}
+		}
+
+		translate([-cc_guides / 2 - od_lm8uu / 2 - 6, -od_lm8uu / 4 - 2.5 + 10, -h_carriage / 2 - 1])
+			cube([cc_guides + od_lm8uu + 12, od_lm8uu / 2 + 5, total_h + 2]);
 	}
 }
 

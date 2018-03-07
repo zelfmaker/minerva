@@ -19,19 +19,19 @@ include <extruder_drive.scad>
 
 part = 5;
 
-if (part == 1) // extruder-body.stl
+if (part == 1) // optional-blue-extruder-body.stl
 	drive_body(threads = false);
 
-if (part == 2) // extruder-idler.stl
+if (part == 2) // optional-blue-extruder-idler.stl
 	extruder_idler_608z();
 
-if (part == 3) // extruder-support-strut.stl
+if (part == 3) // optional-blue-extruder-support-strut.stl
 	support_strut();
 
-if (part == 4) // extruder-axle.stl
+if (part == 4) // optional-blue-extruder-axle.stl
 	axle_8mm();
 
-if (part == 5) // extruder.stl
+if (part == 5) // blue-extruder-1x.stl
 {
 	translate([0,-20,0])
 		rotate([0,0,270])

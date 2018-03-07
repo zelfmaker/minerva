@@ -1,4 +1,4 @@
-/************************************************************************************
+/************************************************************************************ {{{
 
 minerva_renderer.scad - easily select and render parts and plates for manufacture of Minerva platform
 Copyright 2015 Jerry Anzalone <info@phidiasllc.com>
@@ -17,275 +17,312 @@ GNU Affero General Public License for more details.
 You should have received a copy of the GNU Affero General Public License
 along with this program. If not, see <http://www.gnu.org/licenses/>.
 
-************************************************************************************/
+}}} ************************************************************************************/
 
 // include the modules required for rendering
 include <minerva.scad>
 
-part = "hotend-tool";
-plate = 0;
+part = "motor-end";
+plate = "";
 
-// renders individual parts
-// end that holds motor - 3 required
+// Names have the form:
+// <color>-<name>-<quantity>x.<ext>
+// name describes the part.  It may contain hyphens.
+// parts not used in the default build have a name starting with "optional-".
+// color is the color that they are in the reference build.
+// quantity is the number of times this file needs to be printed.
 
-// Mount for pcb spindle.  WIP.
-if (part == "spindle-mount") // spindle-mount.stl
-	spindle_mount();
+// Plates are named:
+// plate-<color>-<name>.stl
 
-// Idler end.
-if (part == "idler-end") // idler-end-3x.stl
+// Frame: orange. {{{
+// Idler end. {{{
+if (part == "idler-end") // orange-idler-end-3x.stl
 	minerva_end_idler(z_offset_guides = 8, clamp = false);
+if (plate == "idler-orange") { // plate-orange-idler.stl
+	for (i = [-1:1]) {
+		translate([0, i * (w_clamp + t_board + 2) + 17, h_clamp / 2])
+			minerva_end_idler(z_offset_guides = 8, clamp = false);
+	}
+}
+// }}}
 
-// Idler end with clamp for aluminum vertical board.
-if (part == "idler-end-clamp") // idler-end-clamp.stl
-	minerva_end_idler(z_offset_guides = 8, clamp = true);
-
-// Back clamp for aluminum clamps.
-if (part == "idler-clamp") // idler-clamp.stl
-	minerva_clamp(floor = 0, hole_offset = false, fraction = .5);
-
-// Clamp for aluminum bar at the top.
-if (part == "top-clamp") // top-clamp.stl
-	minerva_clamp(floor = 1, hole_offset = false, fraction = 1);
-
-// Corner for aluminum bar at the top.
-if (part == "top-corner") // top-corner.stl
-	minerva_clamp(floor = 2, hole_offset = false, fraction = .5);
-
-// Magnet mount for aluminum bar.
-if (part == "top-magnet-mount") // top-magnet-mount.stl
-	minerva_top_magnet_mount();
-
-// end that holds idler bearings and end limit switches - 3 required
-if (part == "motor-end") // motor-end-3x.stl
-	minerva_end_motor(z_offset_guides = 8, clamp = false);
-
-// Motor end with a clamp for aluminum bar.
-if (part == "motor-end-clamp") // motor-end-clamp.stl
-	minerva_end_motor(z_offset_guides = 8, clamp = true);
-
-// Clamp for motor block.
-if (part == "motor-clamp") // motor-clamp.stl
-	minerva_clamp(floor = 1, hole_offset = true, fraction = .5);
-
-// clamps the guide rods firmly to motor/idler ends - 12 required
-if (part == "bar-clamp") // bar-clamp-12x.stl
-	bar_clamp();
-
-// permits tensioning of belts; all three are contained in one instance.
-if (part == "belt-terminators") // belt-terminators-1x.stl
-	minerva_belt_terminators();
-
-// carriages ride on the guide rods 3 required for Parthenos
-if (part == "carriage") // carriage.stl
-	for (n = [0:2]) translate([0, 50 * n, 0]) minerva_carriage(linear_bearing = bearing_lm8uu, extra = 10, name = "uvw"[n]);
-
-// the roller switch mount - 3 required for Parthenos
-if (part == "central-limit-switch") // central-limit-switch-3x.stl
-	central_limit_switch();
-
-// the bottom limit switch mount
-if (part == "bottom-switch") // bottom-switch-3x.stl
-	bottom_limit_switch();
-
-// if the platform uses a BBB and melzi, one of these is required
-if (part == "bbb-melzi-mount") // bbb-melzi-mount.stl
-	bbb_melzi_mount(render_large = true, render_small = true);
-
-// mounts to vertical board, holds magnetic tools not in use and hides wires - convenience, not required for Parthenos
-if (part == "tool-holder") // tool-holder.stl
-	minerva_tool_holder();
-
-// mounts to vertical board to which extruder drive is mounted and holds spool - convenience, not required
-if (part == "spool-holder") // spool-holder-1x.stl
-	minerva_spool_holder(render_mount = true, render_holder = true, mount_wood = true);
-
-// mounts to vertical board, holds tools and hides wires - convenience, not required
-if (part == "hand-tool-holder") // hand-tool-holder.stl
-	minerva_hand_tool_holder(wood_mount = true, sonicare_magnet = false);
-
-// Mounting plate fits in slotted motor-end linking board, one required; print with support
-if (part == "connector-plate") // connector-plate-1x.stl
-	connector_plate();
-
-// for holding glass to base plate, three required
-if (part == "glass-holddown") // glass-holddown.stl
-	glass_holddown();
-
-if (part == "ceramic-clamp") // ceramic-clamp-3x.stl
+// Platform clamp. {{{
+if (part == "ceramic-clamp") // orange-ceramic-clamp-3x.stl
 	ceramic_clamp();
+if (plate == "clamp-l") { // plate-orange-clamp-l.stl
+	for (x = [0:5], y = [-2:0]) {
+		translate([x * 15, y * 40, 0])
+			ceramic_clamp([-1]);
+	}
+}
+if (plate == "clamp-r") { // plate-orange-clamp-l.stl
+	for (x = [-5:0], y = [-2:0]) {
+		translate([x * 15, y * 40, 0])
+			ceramic_clamp([1]);
+	}
+}
+// }}}
 
-if (part == "effector") // effector-1x.stl
-	tool_effector();
-
-if (part == "hotend-tool") // hotend-tool-1x.stl
-	hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, openfront = true, render_thread = false);
-
-// shroud mounted to bottom of end effector for improved print cooling
-if (part == "hotend-shroud") // hotend-shroud.stl
-	hotend_shroud(height = 18, twist = 5);
-
-// 2-D outline of hexagon to cut out of wood
-if (part == "hexagon") // hexagon.svg
-	scale(96 / 25.4) minerva_hexagon();
-
-if (part == "hexagon-arm") // hexagon.svg
-	scale(96 / 25.4) minerva_hexagon(top_mount = true);
-
-// 2-D outline of rectangular boards to cut out of wood
-if (part == "v-boards") // v_boards.svg
-	scale(96 / 25.4) minerva_v_boards();
-
-// 2-D outline of rectangular boards to cut out of wood
-if (part == "h-boards") // h_boards.svg
-	scale(96 / 25.4) minerva_h_boards();
-
-// 2-D outline of tie rod (need 2 parts for one tie rod; 12 parts total)
-if (part == "tierod") // tierod.svg
-	scale(96 / 25.4) minerva_tierod();
-
-// Cap for mounting bearing balls on carbon fiber tie rods.
-if (part == "tierod-cap") // tierod-cap.stl
-	minerva_tierod_cap();
-
-if (part == "pcb-mount") // pcb-mount.stl
-	pcb_mount();
-
-// renders production plates
-// approximate build circle to assure placement and fit on build platform
-//	color([1, 0, 0])
-//		circle(r = 125);
-
-if (plate == 1)
-	for (i = [-1:1])
-		translate([0, i * (w_clamp + 2) + 20, 0])
-			minerva_end_idler(z_offset_guides = 8);
-
-if (plate == 2) {
-	translate([0, -w_clamp / 2 - 6, 0])
+// Motor end. {{{
+if (part == "motor-end") // orange-motor-end-3x.stl
+	minerva_end_motor(z_offset_guides = 8, clamp = false);
+if (plate == "motor-end") { // plate-orange-motor-end.stl
+	translate([0, -w_clamp / 2 - 6, h_clamp / 2])
 		minerva_end_motor();
-
-	translate([0, w_clamp / 2 + 6, 0])
+	translate([0, w_clamp / 2 + 6, h_clamp / 2])
 		rotate([0, 0, 180])
 			minerva_end_motor();
-
-	translate([l_clamp - 6, 0, 0])
+	translate([l_clamp - 6, 0, h_clamp / 2])
 		rotate([0, 0, 90])
 			minerva_end_motor();
 }
+// }}}
 
-// hot end effector
-if (plate == 3) {
-	hotend_effector(quickrelease = true, dalekify = false);
-}
-
-// fixed terminators
-if (plate == 4) {
-	for (i = [-3:2], j = [-1:1])
-		//rotate([0, 0, i * 120])
-			translate([i * 11, j * 32, 0])
-				minerva_fixed_belt_terminator();
-}
-
-// free terminators
-if (plate == 5) {
-	for (i = [-3:2], j = [-1:1])
-		//rotate([0, 0, i * 120])
-			translate([i * 11, j * 25, 0])
-				minerva_free_belt_terminator();
-}
-
-// bar clamps
-if (plate == 6) {
-	translate([-h_bar_clamp / 2 - 6, -w_clamp - 1, t_bar_clamp / 2])
-		for (i = [0:2])
-			for (j = [-4:3])
-				translate([j * -(h_bar_clamp + 1), i * (w_clamp + 1), 0])
-					bar_clamp();
-}
-
-if (plate == 7) {
-	// Parthenos carriages
-	translate([22, -2, 0])
-		rotate([0, 0, 180])
-			minerva_convertible_carriage();
-
-	minerva_convertible_carriage();
-
-	translate([14, -39, 0])
-		rotate([0, 0, 180])
-			minerva_convertible_carriage();
-}
-
-if (plate == 8) {
-	translate([22, -2, 0])
-		rotate([0, 0, 180])
-			minerva_basic_carriage();
-
-	minerva_basic_carriage();
-
-	translate([14, -34, 0])
-		rotate([0, 0, 180])
-			minerva_basic_carriage();
-}
-
-if (plate == 9) {
-	for (i = [-1:1], j = [-2:1])
-		translate([i * 19, j * 22 + ((i == 0) ? 11 : 0), 0])
-			thumbscrew_quickrelease();
-}
-
-if (plate == 10) {
-	for (i = [-1:1], j = [-1,0])
-		translate([i * 30, j * 25 + 12.5, 0])
-		minerva_spool_holder(
-			render_mount = true,
-			render_holder = false,
-			mount_wood = true);
-}
-
-if (plate == 11) {
-	for(i = [-1:1])
-		translate([0, i * 55, 0])
-			bbb_melzi_mount(render_large = true, render_small = false);
-
-}
-
-module hotend_shroud(
-	height,
-	twist
-) {
-	t_shroud_base = 2.5;
-	t_shroud = 0.6;
-
-	difference() {
-		hull() {
-		union() {
-			cylinder(r = r1_opening + 1.5 + t_shroud, h = t_shroud_base);
-
-				hull()
-					effector_shroud_holes(diameter = d_M3_cap / 2, height = t_shroud_base);
-
-				translate([0, 0, height - 0.1])
-					cylinder(r = r1_opening + 1.5 + t_shroud, h = 0.1);
-			}
-		}
-
-		translate([0, 0, -0.5])
-			if (twist > 0)
-				metric_thread(
-					diameter = 2 * (r1_opening + 1.5),
-					pitch = 3,
-					length = height + 1,
-					internal = true,
-					n_starts = twist);
-			else
-				cylinder(r = r1_opening + 1.5, h = height + 2);
-
-		translate([0, 0, t_shroud_base])
-			effector_shroud_holes(diameter = d_M3_cap / 2, height = height);
-
-		translate([0, 0, -1])
-			effector_shroud_holes(diameter = d_M3_screw / 2, height = t_shroud_base + 2);
+// Bar clamps. {{{
+if (part == "bar-clamp") // orange-bar-clamp-12x.stl
+	bar_clamp();
+if (plate == "bar-clamp") { // plate-orange-bar-clamp.stl
+	for (x = [-5:6], y = [-1:1]) {
+		translate([x * 12, y * 35, t_bar_clamp / 2])
+			bar_clamp();
 	}
 }
+// }}}
+
+// Bottom limit switch mount. {{{
+if (part == "bottom-switch") // orange-bottom-switch-3x.stl
+	bottom_limit_switch();
+if (plate == "bottom-switch") { // plate-orange-bottom-switch.stl
+	for (x = [-2:2], y = [-2:1]) {
+		translate([x * 27, y * 27, 0])
+			bottom_limit_switch();
+	}
+}
+// }}}
+// }}}
+
+// Moving parts: green. {{{
+// Belt terminator for tensioning the belts. {{{
+if (part == "belt-terminators") // green-belt-terminators-1x.stl
+	minerva_belt_terminators();
+if (plate == "belt-terminators") { // plate-green-belt-terminators.stl
+	for (x = [-3:3], y = [-3:2]) {
+		translate([x * 21, y * 20, 0])
+			minerva_free_belt_terminator();
+	}
+}
+// }}}
+
+// carriages ride on the guide rods. {{{
+if (part == "carriage") { // green-carriage-1x.stl
+	for (n = [0:2]) {
+		translate([0, 50 * n, 0])
+			minerva_carriage(linear_bearing = bearing_lm8uu, extra = -1, name = "uvw"[n]);
+	}
+}
+if (plate == "carriage") { // plate-green-carriage.stl
+	for (n = [0:2]) {
+		translate([0, 32 * n, h_carriage / 2])
+			minerva_carriage(linear_bearing = bearing_lm8uu, extra = -1, name = "uvw"[n]);
+	}
+	translate([0, -32, h_carriage / 2])
+		minerva_carriage(linear_bearing = bearing_lm8uu, extra = -1, name = "u");
+	translate([-70, -20, h_carriage / 2]) {
+		rotate([0, 0, 90])
+			minerva_carriage(linear_bearing = bearing_lm8uu, extra = -1, name = "v");
+	}
+	translate([70, -20, h_carriage / 2]) {
+		rotate([0, 0, -90])
+			minerva_carriage(linear_bearing = bearing_lm8uu, extra = -1, name = "w");
+	}
+}
+// }}}
+
+// The effector holds the tool and connects to the carriages. {{{
+if (part == "effector") // green-effector-1x.stl
+	tool_effector();
+if (plate == "effector") { // plate-green-effector.stl
+	tool_effector();
+	for (angle = [0:2]) {
+		rotate([0, 0, 120 * angle]) {
+			translate([0, 70, 0]) {
+				rotate([0, 0, 60])
+					tool_effector();
+			}
+		}
+	}
+}
+// }}}
+
+// Cap for mounting bearing balls on carbon fiber tie rods. {{{
+if (part == "tierod-cap") // green-tierod-cap-1x.stl
+	minerva_tierod_cap(); // This contains 12 caps.
+if (plate == "tierod-cap") { // plate-green-tierod-cap.stl
+	for (x = [-8:8], y = [-6:5]) {
+		translate([x * 10, y * 10, 0])
+			minerva_tierod_cap(single = true);
+	}
+}
+// }}}
+// }}}
+
+// TODO Cold end and related parts: blue. {{{
+// TODO: move cold end into this file.
+// mounts to vertical board to which extruder drive is mounted and holds spool - convenience, not required
+if (part == "spool-holder") // blue-spool-holder-1x.stl
+	minerva_spool_holder(render_mount = true, render_holder = true, mount_wood = true);
+// }}}
+
+// TODO Electronics: yellow. {{{
+// TODO: Add mounting supports.
+// Mounting plate fits in slotted motor-end linking board
+if (part == "connector-plate") // yellow-connector-plate-1x.stl
+	connector_plate();
+// }}}
+
+// Hot end: red. {{{
+// Hot end tool body. {{{
+if (part == "hotend-tool") // red-hotend-tool-1x.stl
+	hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = false);
+if (plate == "hotend-tool") { // plate-red-hotend-tool.stl
+	hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = true);
+	for (angle = [0:2]) {
+		rotate([0, 0, 120 * angle]) {
+			translate([0, 70, 0]) {
+				rotate([0, 0, 60])
+					hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = true);
+			}
+		}
+	}
+}
+// }}}
+
+// Hot end retainer. {{{
+if (part == "hotend-retainer") // red-hotend-tool-1x.stl
+	hotend_retainer();
+if (plate == "hotend-retainer") { // plate-red-hotend-retainer.stl
+	for (x = [-2:2], y = [-6:1]) {
+		translate([x * 33, y * 12, 0])
+			hotend_retainer();
+	}
+}
+// }}}
+// }}}
+
+// Boards: wood. {{{
+// 2-D outline of hexagon to cut out of wood
+if (part == "hexagon") // wood-hexagon-1x.svg
+	scale(96 / 25.4) minerva_hexagon();
+
+// 2-D outline of rectangular boards to cut out of wood
+if (part == "v-boards") // wood-v_boards-1x.svg
+	scale(96 / 25.4) minerva_v_boards();
+
+// 2-D outline of rectangular boards to cut out of wood
+if (part == "h-boards") // wood-h_boards-1x.svg
+	scale(96 / 25.4) minerva_h_boards();
+// }}}
+
+
+
+
+// Parts that are not used in the default build. {{{
+
+// Idler end with clamp for aluminum vertical board.
+if (part == "idler-end-clamp") // optional-idler-end-clamp-orange-1x.stl
+	minerva_end_idler(z_offset_guides = 8, clamp = true);
+
+// Back clamp for aluminum clamps.
+if (part == "idler-clamp") // optional-idler-clamp-orange-1x.stl
+	minerva_clamp(floor = 0, hole_offset = false, fraction = .5);
+
+// Clamp for aluminum bar at the top.
+if (part == "top-clamp") // optional-top-clamp-orange-1x.stl
+	minerva_clamp(floor = 1, hole_offset = false, fraction = 1);
+
+// Corner for aluminum bar at the top.
+if (part == "top-corner") // optional-top-corner-orange-1x.stl
+	minerva_clamp(floor = 2, hole_offset = false, fraction = .5);
+
+// Magnet mount for aluminum bar.
+if (part == "top-magnet-mount") // optional-top-magnet-mount-orange-1x.stl
+	minerva_top_magnet_mount();
+
+// Motor end with a clamp for aluminum bar.
+if (part == "motor-end-clamp") // optional-motor-end-clamp-orange-1x.stl
+	minerva_end_motor(z_offset_guides = 8, clamp = true);
+
+// Clamp for motor block.
+if (part == "motor-clamp") // optional-motor-clamp-orange-1x.stl
+	minerva_clamp(floor = 1, hole_offset = true, fraction = .5);
+
+// Extra high carriages for more stable movement; required for milling.
+if (part == "large-carriage") // optional_large-carriage-green-1x.stl
+	for (n = [0:2]) translate([0, 50 * n, 0]) minerva_carriage(linear_bearing = bearing_lm8uu, extra = 10, name = "uvw"[n]);
+
+// the roller switch mount - 3 required for Parthenos
+if (part == "central-limit-switch") // central-limit-switch-orange-3x.stl
+	central_limit_switch();
+
+// Mount for pcb spindle.  WIP.
+if (part == "spindle-mount") // optional-spindle-mount-orange-1x.stl
+	spindle_mount();
+
+// if the platform uses a BBB and melzi, one of these is required
+if (part == "bbb-melzi-mount") // optional-bbb-melzi-mount-yellow-1x.stl
+	bbb_melzi_mount(render_large = true, render_small = true);
+
+// mounts to vertical board, holds magnetic tools not in use and hides wires - convenience, not required for Parthenos
+if (part == "tool-holder") // optional-tool-holder-blue-1x.stl
+	minerva_tool_holder();
+
+// mounts to vertical board, holds tools and hides wires - convenience, not required
+if (part == "hand-tool-holder") // optional-hand-tool-holder-blue-1x.stl
+	minerva_hand_tool_holder(wood_mount = true, sonicare_magnet = false);
+
+// for holding glass to base plate
+if (part == "glass-holddown") // optional-glass-holddown-3x.stl
+	glass_holddown();
+
+// shroud mounted to bottom of end effector for improved print cooling
+if (part == "hotend-shroud") // optional-hotend-shroud-red-1x.stl
+	hotend_shroud(height = 18, twist = 5);
+
+// Hexagon with a gap for the aluminum arm.
+if (part == "hexagon-arm") // optional-hexagon-wood-1x.svg
+	scale(96 / 25.4) minerva_hexagon(top_mount = true);
+
+// 2-D outline of tie rod (need 2 parts for one tie rod; 12 parts total)
+if (part == "tierod") // optional-tierod-12x.svg
+	scale(96 / 25.4) minerva_tierod();
+
+// Mount for pcb used for milling.
+if (part == "pcb-mount") // optional-pcb-mount-1x.stl
+	pcb_mount();
+// }}}
+
+// When rendering a plate, show platform shape for fitting the parts. {{{
+module platform_apex(angle) {
+	rotate([0, 0, angle]) {
+		intersection() {
+			translate([0, r_printer - r_effector - carriage_offset, -2])
+				cylinder(r = l_tierod, h = 4);
+			translate([-l_tierod, -l_tierod, angle == 0 ? -1 : -2])
+				cube([2 * l_tierod, l_tierod + r_printer - r_effector - carriage_offset, angle == 0 ? 1 : 4]);
+		}
+	}
+}
+
+if (plate != "") {
+	echo(l_tierod, r_printer, r_printer - r_effector - carriage_offset);
+	%intersection() {
+		intersection() {
+			platform_apex(0);
+			platform_apex(120);
+		}
+		platform_apex(-120);
+	}
+}
+// }}}
+// vim: set foldmethod=marker filetype=c :

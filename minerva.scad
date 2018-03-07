@@ -56,11 +56,30 @@ d_tile = 251;
 cc_idler_mounts = 120; // c-c of mounts on idler end - large to maximize x-y translation when in fixed tool mode and minimizes material use for bases
 cc_motor_mounts = 75; // c-c of mounts on idler end
 
+// magnetic ball joint dims
+d_ball_bearing = 9.5;
+od_magnet = 10;
+h_magnet = 2.8;
+d_bearing_with_magnet = 10.9;
+h_carriage_magnet_mount = 9;
+h_effector_magnet_mount = 10;
+r_pad_carriage_magnet_mount = 2;
+r_pad_effector_magnet_mount = 2;
+
+// tierod dims
+w_laser = .6;
+t_tierod = 3.2;	// thickness of tie rod plates - typically 3
+w_tierod = 3 * t_tierod;
+w2_tierod = 4 * t_tierod;
+tierod_fraction = 0.25;	// Fraction of the bearing ball's surface that makes contact.
+d_tierod = 5.2;
+h_tierod_cap = 2 * d_tierod + d_ball_bearing / 2;
+h_tierod_wall = 2;
+
 // printer dims
 r_printer = 175; // radius of the printer, distance from printer center to guide rod centers - typically 175
-l_tierod = 250; // length of the tie rods - typically 250
-t_tierod = 3.2;	// thickness of tie rod plates - typically 3
-l_guide_rods = 600; // length of the guide rods - only used for assembly
+l_tierod = 250 + 2 * h_tierod_wall + d_ball_bearing; // length of the tie rods - typically 250
+l_guide_rods = 600; // length of the guide rods
 
 // belt, pulley and idler dims
 idler = bearing_608;
@@ -123,16 +142,6 @@ h_motor_pad = h_motor_screw - (w_clamp - w_idler_relief) / 2 - motor_screw_depth
 
 cc_v_board_mounts = l_idler_relief - d_M3_nut - 2 * r_idler_relief; // c-c mounts for vertical boards
 
-// magnetic ball joint dims
-d_ball_bearing = 9.5;
-od_magnet = 10;
-h_magnet = 2.8;
-d_bearing_with_magnet = 10.9;
-h_carriage_magnet_mount = 9;
-h_effector_magnet_mount = 10;
-r_pad_carriage_magnet_mount = 2;
-r_pad_effector_magnet_mount = 2;
-
 // effector dims
 // l_effector needs to be played with to keep the fan from hitting the tie rods
 l_effector = 60; // cc of tie rod bearings on effector
@@ -143,9 +152,9 @@ h_triangle_inner = h_effector + 12;
 r_triangle_middle = equilateral_base_from_height(h_triangle_inner) * tan(30) / 2;
 
 // for the small tool end effector:
-d_small_effector_tool_mount = 36; // diameter of the opening in the end effector that the tool will pass through
+d_small_effector_tool_mount = 50; // diameter of the opening in the end effector that the tool will pass through
 d_small_effector_tool_magnet_mount = 1 + d_small_effector_tool_mount + od_magnet + 2 * r_pad_effector_magnet_mount; // ring diameter of the effector tool magnet mounts
-d_small_tool_magnets = 50;
+d_small_tool_magnets = 62;
 
 // for the large tool end effector:
 d_large_effector_tool_mount = 50;
@@ -159,7 +168,7 @@ d_quickrelease = 12; // diameter of the hex portion for counter-sinking quick re
 countersink_quickrelease = 6; // depth to contersink quick release fitting into hot end tool when not headless
 
 // hot end dims
-pad_jhead = 8; // this is added to the diameter of the cage to permit clearance for the hotend
+pad_jhead = 12; // this is added to the diameter of the cage to permit clearance for the hotend
 pad_e3d = 14;
 t_hotend_cage = t_heat_x_jhead - h_groove_jhead - h_groove_offset_jhead;
 d_hotend_side = d_large_jhead + pad_jhead;
@@ -168,8 +177,8 @@ a_fan_mount = 15;
 l_fan = 39.5;
 r_flare = 9;
 h_retainer_body = h_groove_jhead + h_groove_offset_jhead + 4;
-r1_retainer_body = d_hotend_side / 2 + r_flare * 3 / t_hotend_cage;
-r2_retainer_body = r1_retainer_body - r_flare * h_retainer_body / t_hotend_cage;
+r1_retainer_body = d_hotend_side / 2 + r_flare * 3 / t_hotend_cage - .5;
+r2_retainer_body = r1_retainer_body - r_flare * h_retainer_body / t_hotend_cage + 2;
 r2_opening = (d_hotend_side - 5 ) / 2 + r_flare * (t_hotend_cage - 6 - t_effector + 3.0) / (t_hotend_cage - 6);//r1_opening - r_flare * (t_effector + 1.5) / t_hotend_cage;
 r1_opening = r2_opening - 1;
 d_retainer_screw = d_M2_screw;
@@ -1163,9 +1172,9 @@ module minerva_hand_tool_holder(
 
 module tool_effector() {
 	difference() {
-		effector_base(large = false);
+		effector_base(large = true);
 		for (i = [0:2]) {
-			rotate([0, 0, 120 * i + 30]) {
+			rotate([0, 0, 120 * i + 90]) {
 				translate([d_small_tool_magnets / 2, 0, t_effector - h_magnet])
 					cylinder(d = od_magnet, h = h_magnet + 1);
 				translate([d_small_tool_magnets / 2, 0, -1])
@@ -1182,59 +1191,29 @@ module hotend_tool(
 		dalekify = false,
 		vent = false,
 		headless = false,
-		openfront = true,
 		render_thread = false) {
-	union() {
-		translate([0, l_fan, 0])
-			hotend_retainer();
-		translate([0, 0, t_effector / 2]) {
-			difference() {
-				union() {
-					hotend_mount(
-						dalekify = dalekify,
-						quickrelease = quickrelease,
-						vent = vent,
-						headless = headless,
-						openfront = openfront,
-						render_thread = render_thread
-					);
-					tool_mount_body(t_effector, d_small_tool_magnets);
-				}
+	y_offset = -5;
+	z_offset = 8;
+	translate([0, 0, t_effector / 2]) {
+		difference() {
+			union() {
+				hotend_mount(
+					dalekify = dalekify,
+					quickrelease = quickrelease,
+					vent = vent,
+					headless = headless,
+					render_thread = render_thread,
+					y_offset = y_offset,
+					z_offset = z_offset
+				);
+				rotate([0, 0, 180])
+					tool_mount_body(d_small_tool_magnets, t_effector);
+			}
+			rotate([0, 0, 180])
 				tool_mount_bearing_cage(d_small_tool_magnets, t_effector);
 
-				// Bottom hole.
-				translate([0, 0, 0])
-					cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 0.1, center = true);
-
-				// Front hole.
-				if (openfront) {
-					translate([0, r1_opening * 2, 0])
-						cube([l_fan - 13, r1_opening * 4, r1_opening * 2], center = true);
-				}
-
-				// Fan nut holes.  All these computations are from hotend_cage in simple_delta_common.scad.
-				y_offset_fan = d_hotend_side / 2 + t_heat_x_jhead / 2 * sin(a_fan_mount);
-				z_offset_fan = t_effector;
-				t_fan_mount = 3;
-				fan_cc_mount_holes = 32;
-				r_fan_mount_holes = pow(pow(fan_cc_mount_holes / 2, 2) * 2, 0.5);
-				h_thickness = t_hotend_cage / cos(a_fan_mount); // length of hypoteneus based upon thickness of cage
-				translate([0, 0, (t_hotend_cage - t_effector) / 2]) {
-					translate([0, y_offset_fan, (l_fan > h_thickness) ? z_offset_fan + (l_fan - h_thickness) / 2: z_offset_fan]) {
-						rotate([90 + a_fan_mount, 0, 0]) {
-							for (i = [0:3]) {
-								rotate([0, 0, i * 90 + 45]) {
-									translate([0, r_fan_mount_holes, 0]) {
-										cylinder(d = d_M3_screw, h = t_fan_mount + 1, center = true);
-										translate([0, 0, t_fan_mount / 2])
-											cylinder(d = d_M3_nut * 1.3, h = h_M3_nut * 2);
-									}
-								}
-							}
-						}
-					}
-				}
-			}
+			// Bottom hole.
+			cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 0.1, center = true);
 		}
 	}
 }
@@ -1279,8 +1258,7 @@ module hotend_effector(
 		quickrelease = true,
 		dalekify = false,
 		vent = false,
-		headless = false,
-		openfront = true) {
+		headless = false) {
 	difference() {
 		union() {
 			hotend_mount(
@@ -1288,7 +1266,6 @@ module hotend_effector(
 				quickrelease = quickrelease,
 				vent = vent,
 				headless = headless,
-				openfront = openfront,
 				render_thread = false
 			);
 
@@ -1302,11 +1279,6 @@ module hotend_effector(
 		/*translate([0, 0, -t_effector / 2 - 1])
 			rotate([0, 0, 60])
 				effector_shroud_holes(diameter = d_M3_screw / 2 - 0.15, height = t_effector + 1 - 2 * layer_height);*/
-
-		if (openfront) {
-			translate([0, r1_opening * 2, 0])
-				cube([r1_opening * 2, r1_opening * 4, r1_opening * 2], center = true);
-		}
 	}
 }
 
@@ -1336,7 +1308,7 @@ module glass_holddown() {
 	}
 }
 
-module ceramic_clamp() {
+module ceramic_clamp(side = [-1, 1]) {
 	w = -w_mount / 2 - w_base_mount / 2 + r_base_mount - w_base_mount / 2 + 4;
 	difference() {
 		intersection() {
@@ -1351,7 +1323,7 @@ module ceramic_clamp() {
 					cube([2 * l_clamp, 2, 2], center = true);
 			}
 			union() {
-				for (side = [-1, 1]) {
+				for (side = side) {
 					l = 0;
 					l2 = -l_base_mount / 2 + l;
 					x = cc_motor_mounts / 2 - l2 * cos(60) + w * sin(60);
@@ -1860,9 +1832,6 @@ module minerva_v_boards(z_offset_guides = 8) {
 	}
 }
 
-w_laser = .6;
-w_tierod = 3 * t_tierod;
-w2_tierod = 4 * t_tierod;
 module tierod_ring() {
 	difference() {
 		circle(d = w2_tierod + w_laser);
@@ -1873,15 +1842,11 @@ module tierod_ring() {
 	}
 }
 
-tierod_fraction = 0.25;	// Fraction of the bearing ball's surface that makes contact.
-d_tierod = 5.2;
-h_tierod_cap = 2 * d_tierod + d_ball_bearing / 2;
-h_tierod_wall = 2;
-module minerva_tierod_cap() {
+module minerva_tierod_cap(single = false) {
 	// Surface = 2*pi*(1-sin(a)) = 4*pi*f
 	// sin(a) = 1 - 2*f
-	for (y = [0:2]) {
-		for (x = [0:3]) {
+	for (y = [0:single ? 0 : 2]) {
+		for (x = [0:single ? 0 : 3]) {
 			translate([x * 10, y * 10, 0]) {
 				difference() {
 					cylinder(r = (d_ball_bearing / 2) * cos(asin(1 - 2 * tierod_fraction)), h = h_tierod_cap);
@@ -1957,6 +1922,42 @@ module pcb_mount() {
 					cylinder(d = d_M3_screw, h = d_ball_bearing + 2);
 			}
 		}
+	}
+}
+
+module hotend_shroud(height, twist) {
+	t_shroud_base = 2.5;
+	t_shroud = 0.6;
+
+	difference() {
+		hull() {
+		union() {
+			cylinder(r = r1_opening + 1.5 + t_shroud, h = t_shroud_base);
+
+				hull()
+					effector_shroud_holes(diameter = d_M3_cap / 2, height = t_shroud_base);
+
+				translate([0, 0, height - 0.1])
+					cylinder(r = r1_opening + 1.5 + t_shroud, h = 0.1);
+			}
+		}
+
+		translate([0, 0, -0.5])
+			if (twist > 0)
+				metric_thread(
+					diameter = 2 * (r1_opening + 1.5),
+					pitch = 3,
+					length = height + 1,
+					internal = true,
+					n_starts = twist);
+			else
+				cylinder(r = r1_opening + 1.5, h = height + 2);
+
+		translate([0, 0, t_shroud_base])
+			effector_shroud_holes(diameter = d_M3_cap / 2, height = height);
+
+		translate([0, 0, -1])
+			effector_shroud_holes(diameter = d_M3_screw / 2, height = t_shroud_base + 2);
 	}
 }
 

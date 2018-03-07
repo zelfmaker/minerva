@@ -1,13 +1,21 @@
-all:
+all: parts plates extruder
+
+parts:
 	/home/shevek/src/render-openscad/render-openscad < minerva_renderer.scad
 
-dxf: build/hexagon.dxf build/h_boards.dxf build/v_boards.dxf build/tierod.dxf
+plates:
+	/home/shevek/src/render-openscad/render-openscad --part=plate < minerva_renderer.scad
+
+extruder:
+	/home/shevek/src/render-openscad/render-openscad < extruder_drive_renderer.scad
+
+dxf: build/wood-hexagon-1x.dxf build/wood-h_boards-1x.dxf build/wood-v_boards-1x.dxf
 
 
 %.eps: %-prepared.svg
 	inkscape -E $@ $<
 
 %.dxf: %.eps
-	pstoedit -dt -f dxf:-polyaslines\ -mm $< $@
+	pstoedit -psarg -dREALLYDELAYBIND -dt -f dxf:-polyaslines\ -mm $< $@
 
 .PHONY: all dxf
