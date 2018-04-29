@@ -634,11 +634,9 @@ module tool_mount_body(d_effector_tool_magnet_mount, h_effector_tool_mount) {
 		}
 
 		// put an index on the edge normal the y-axis
-		translate([5 * tan(30), (d_effector_tool_magnet_mount / 2 + d_ball_bearing / 2 + 1.5) * tan(30), 0]) {
-			rotate([0, 0, 60]) {
-				linear_extrude(height = h_effector_tool_mount, center = true)
-					equilateral(5);
-			}
+		translate([0, -d_effector_tool_magnet_mount / 2 - d_ball_bearing / 2 - 5.5, 0]) {
+			linear_extrude(height = h_effector_tool_mount, center = true)
+				equilateral(5);
 		}
 
 	}

@@ -73,8 +73,8 @@ w_tierod = 3 * t_tierod;
 w2_tierod = 4 * t_tierod;
 tierod_fraction = 0.25;	// Fraction of the bearing ball's surface that makes contact.
 d_tierod = 5.2;
-h_tierod_cap = 2 * d_tierod + d_ball_bearing / 2;
-h_tierod_wall = 2;
+h_tierod_cap = 25;
+h_tierod_wall = 10;
 
 // printer dims
 r_printer = 175; // radius of the printer, distance from printer center to guide rod centers - typically 175
@@ -1254,6 +1254,65 @@ module hotend_retainer() {
 	}
 }
 
+module probe_tool() {
+	translate([0, 0, t_effector / 2]) {
+		difference() {
+			union() {
+				// TODO.
+				tool_mount_body(d_small_tool_magnets, t_effector);
+			}
+			tool_mount_bearing_cage(d_small_tool_magnets, t_effector);
+		}
+	}
+}
+
+module clamp_tool(d_tool = 13, h_tool = 8) {
+	translate([0, 0, t_effector / 2]) {
+		difference() {
+			union() {
+				tool_mount_body(d_small_tool_magnets, t_effector);
+				difference() {
+					cylinder(d = d_tool + 10, h = t_effector / 2 + h_tool);
+					translate([-(d_tool + 10) / 2 - 1, -(d_tool + 10), -1])
+						cube([d_tool + 10 + 2, d_tool + 10, t_effector / 2 + h_tool + 2]);
+				}
+				translate([-(d_tool + 10) / 2 - 6, 0, 0])
+					cube([d_tool + 10 + 2 * 6, 3, t_effector / 2 + h_tool]);
+			}
+			tool_mount_bearing_cage(d_small_tool_magnets, t_effector);
+			translate([0, 0, -t_effector / 2 - 1])
+				cylinder(d = d_tool, h = h_tool + t_effector + 2);
+			for (x = [-1, 1]) {
+				translate([x * (d_tool / 2 + 5 + 3), -1, t_effector / 2 + h_tool / 2]) {
+					rotate([-90, 0, 0])
+						cylinder(d = d_M3_screw, h = 8);
+				}
+			}
+		}
+	}
+}
+
+module clamp_clamp(d_tool = 13, h_tool = 8) {
+	rotate([-90, 0, 0]) {
+		translate([0, -6, 0]) {
+			difference() {
+				translate([-(d_tool + 10 + 2 * 6) / 2, 0, 0])
+					cube([d_tool + 10 + 2 * 6, 6, h_tool]);
+				translate([0, 0, -1]) {
+					scale([1, .5, 1]) 
+						cylinder(d = d_tool, h = h_tool + 2);
+				}
+				for (x = [-1, 1]) {
+					translate([x * (d_tool / 2 + 5 + 3), -1, h_tool / 2]) {
+						rotate([-90, 0, 0])
+							cylinder(d = d_M3_screw, h = 8);
+					}
+				}
+			}
+		}
+	}
+}
+
 module hotend_effector(
 		quickrelease = true,
 		dalekify = false,
@@ -1849,10 +1908,10 @@ module minerva_tierod_cap(single = false) {
 		for (x = [0:single ? 0 : 3]) {
 			translate([x * 10, y * 10, 0]) {
 				difference() {
-					cylinder(r = (d_ball_bearing / 2) * cos(asin(1 - 2 * tierod_fraction)), h = h_tierod_cap);
+					cylinder(r = (d_ball_bearing / 2) * cos(asin(1 - 2 * tierod_fraction)), h = h_tierod_cap + h_tierod_wall);
 					translate([0, 0, -1])
-						cylinder(d = d_tierod, h = h_tierod_cap - d_ball_bearing / 2 - h_tierod_wall + 1);
-					translate([0, 0, h_tierod_cap])
+						cylinder(d = d_tierod, h = h_tierod_wall + 1);
+					translate([0, 0, h_tierod_cap + h_tierod_wall])
 						sphere(d = d_ball_bearing);
 				}
 			}

@@ -22,7 +22,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 // include the modules required for rendering
 include <minerva.scad>
 
-part = "motor-end";
+part = "clamp-clamp";
 plate = "";
 
 // Names have the form:
@@ -181,7 +181,7 @@ if (part == "connector-plate") // yellow-connector-plate-1x.stl
 	connector_plate();
 // }}}
 
-// Hot end: red. {{{
+// Hot end and other tools: red. {{{
 // Hot end tool body. {{{
 if (part == "hotend-tool") // red-hotend-tool-1x.stl
 	hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = false);
@@ -199,12 +199,42 @@ if (plate == "hotend-tool") { // plate-red-hotend-tool.stl
 // }}}
 
 // Hot end retainer. {{{
-if (part == "hotend-retainer") // red-hotend-tool-1x.stl
+if (part == "hotend-retainer") // red-hotend-retainer-1x.stl
 	hotend_retainer();
 if (plate == "hotend-retainer") { // plate-red-hotend-retainer.stl
 	for (x = [-2:2], y = [-6:1]) {
 		translate([x * 33, y * 12, 0])
 			hotend_retainer();
+	}
+}
+// }}}
+
+// Probe tool. {{{
+if (part == "probe-tool") // red-probe-tool-1x.stl
+	probe_tool();
+if (plate == "probe-tool") { // plate-red-probe-tool.stl
+	for (x = [-2:2], y = [-6:1]) {
+		translate([x * 33, y * 12, 0])
+			probe_tool();
+	}
+}
+// }}}
+
+// Clamp tool. {{{
+if (part == "clamp-tool") // red-clamp-tool-1x.stl
+	clamp_tool();
+if (plate == "clamp-tool") { // plate-red-clamp-tool.stl
+	for (x = [-2:2], y = [-6:1]) {
+		translate([x * 33, y * 12, 0])
+			clamp_tool();
+	}
+}
+if (part == "clamp-clamp") // red-clamp-clamp-1x.stl
+	clamp_clamp();
+if (plate == "clamp-clamp") { // plate-red-clamp-clamp.stl
+	for (x = [-2:2], y = [-6:1]) {
+		translate([x * 33, y * 12, 0])
+			clamp_clamp();
 	}
 }
 // }}}
