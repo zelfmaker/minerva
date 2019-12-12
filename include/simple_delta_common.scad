@@ -57,8 +57,8 @@ module mount_body(
 	height,
 	nut_pocket,
 	w_mount = w_mount,
-	echo = true) {
-	if (echo) {
+	debug = true) {
+	if (debug) {
 		echo(str("Length of linking board to yield printer radius of ", r_printer, "mm  = ", l_brd(cc_mount), "mm"));
 		echo(str("Linking board tab thickness = ", w_mount, "mm"));
 		echo(str("Linking board height = ", height, "mm"));
@@ -132,7 +132,7 @@ module slot(l_slot) {
 }
 
 // so that the relief of the mount holes for vertical boards are consistent:
-module vertical_board_relief(echo = true) {
+module vertical_board_relief(debug = true) {
 	// holes to mount vertical boards
 	for (i = [-1, 1])
 		translate([i * cc_v_board_mounts / 2, w_clamp / 2, 0])
@@ -142,7 +142,7 @@ module vertical_board_relief(echo = true) {
 					cylinder(d = d_M3_nut, h = h_M3_nut + 1, $fn = 6);
 			}
 
-	if (echo) echo(str("c-c vertical board mounts = ", cc_v_board_mounts));
+	if (debug) echo(str("c-c vertical board mounts = ", cc_v_board_mounts));
 }
 
 // the mount is the shape that linking boards attach to
@@ -152,7 +152,7 @@ module mount(
 	cc_mount,
 	base_mount = true,
 	nut_pocket,
-	echo) {
+	debug) {
 	union() {
 		mount_body(
 			cc_mount = cc_mount,
@@ -163,7 +163,7 @@ module mount(
 			l_slot = l_slot,
 			height = height,
 			nut_pocket = nut_pocket,
-			echo = echo);
+			debug = debug);
 
 		if (base_mount) {
 			// boss for mounting base plate
@@ -183,7 +183,7 @@ module mount(
 						cylinder(r = d_M3_screw / 2, h = t_base_mount + 1, center = true);
 				}
 			}
-			if (echo) {
+			if (debug) {
 				for (c = [[l_base_mount / 2, -w_base_mount + 4], [l_base_mount - 4, -w_base_mount + 4]])
 					echo(str("hexagon mount hole: ", cc_mount / 2 + c[0] * cos(60) + c[1] * sin(60), ", ", r_printer + c[1] * cos(60) - c[0] * sin(60), "mm"));
 			}
@@ -198,7 +198,7 @@ module apex(
 	cc_mount,
 	base_mount = true,
 	nut_pocket = 0,
-	echo = true
+	debug = true
 ) {
 	// Central bar.
 	hull() {
@@ -218,7 +218,7 @@ module apex(
 						cc_mount = cc_mount,
 						base_mount = base_mount,
 						nut_pocket = nut_pocket,
-						echo = echo);
+						debug = debug);
 }
 
 // rod_clamp_relief uses the whole motor/idler end as a clamp, requiring threaded rods to apply clamping force
@@ -263,11 +263,11 @@ module bar_clamp_relief(z_offset_guides) {
 
 			// the bar clamp will be rectangular but the pocket it sits in will be trapezoidal so that the clamp can be pressed against the guide rod
 			translate([i * -t_bar_clamp / 2, 0, 0]) {
-				hull() {
+				 hull() {
 					translate([0, -w_clamp / 2 - 1, 0])
 						cube([t_bar_clamp, 0.1, h_bar_clamp + 4 * layer_height], center = true);
 
-					translate([i, w_clamp / 2 + 1, 0])
+					translate([i, w_clamp / 2 + 1 + t_board, 0])
 						cube([t_bar_clamp + 2, 0.1, h_bar_clamp + 4 * layer_height], center = true);
 				}
 
@@ -279,10 +279,11 @@ module bar_clamp_relief(z_offset_guides) {
 }
 
 // bar_clamp is the part that clamps against the guide rods when the motor/idler ends use bar_clamp_relief
-module bar_clamp() {
+module bar_clamp(long = false) {
 	mirror([0, 0, 1])
 		difference() {
-			cube([h_bar_clamp, w_clamp, t_bar_clamp], center = true);
+			translate([0, long ? t_board / 2 : 0, 0])
+				cube([h_bar_clamp, w_clamp + (long ? t_board : 0), t_bar_clamp], center = true);
 
 			translate([0, w_clamp / 2 - 7, 0]) {
 				translate([0, 0, -t_bar_clamp / 2 - layer_height])
@@ -297,7 +298,7 @@ module bar_clamp() {
 					cylinder(r = d_guides / 2, h = h_bar_clamp + 1, center = true);
 
 			//angle the outside end so it's flush with the face of the end when tightened
-			translate([0, w_clamp / 2 + (h_bar_clamp - h_bar_clamp * sin(atan(2 / w_clamp))) / 2, 0])
+			translate([0, w_clamp / 2 + (h_bar_clamp - h_bar_clamp * sin(atan(2 / w_clamp))) / 2 + (long ? t_board : 0), 0])
 				rotate([atan(2 / w_clamp), 0, 0])
 					cube([h_bar_clamp + 1, h_bar_clamp, h_bar_clamp], center = true);
 		}
@@ -654,7 +655,7 @@ module tool_mount_bearing_cage(d_effector_tool_magnet_mount, h_effector_tool_mou
 }
 
 // magnet_mount is the shape of the bosy and pocket into which magnets are mounted
-module magnet_mount(r_pad, h_pad, relief_only = false) {
+module magnet_mount(r_pad, h_pad, relief_only = false, od_magnet = od_magnet, h_magnet = h_magnet, d_bearing_with_magnet = d_bearing_with_magnet) {
 	// this places the pivot point at the origin
 	if (relief_only) {
 		translate([0, 0, h_magnet / 2 - d_bearing_with_magnet + d_ball_bearing / 2]) {
@@ -697,7 +698,7 @@ module effector_base(large = false) {
 		union() {
 			difference() {
 				// magnet mounts are always in the same position
-				effector_tierod_magnets();
+				effector_tierod_magnets(od_magnet2, h_magnet2, d_bearing_with_magnet2);
 
 				// need to flatten base
 				translate([0, 0, -t_effector * 5])
@@ -729,11 +730,11 @@ module effector_base(large = false) {
 					linear_extrude(height = t_effector + 1)
 						equilateral(5);
 		}
-		effector_tierod_magnets(relief_only = true);
+		effector_tierod_magnets(od_magnet2, h_magnet2, d_bearing_with_magnet2, relief_only = true);
 	}
 }
 
-module effector_tierod_magnets(relief_only = false) {
+module effector_tierod_magnets(od_magnet, h_magnet, d_bearing_with_magnet, relief_only = false) {
 	translate([0, 0, h_effector_magnet_mount]) {
 		for (i = [0:2]) {
 			rotate([0, 0, i * 120]) {
@@ -741,7 +742,7 @@ module effector_tierod_magnets(relief_only = false) {
 					rotate([tierod_angle - 90, 0, 0]) {
 						for (j = [-1, 1]) {
 							translate([j * (l_effector) / 2, 0, 0])
-								magnet_mount(r_pad = r_pad_effector_magnet_mount, h_pad = h_effector_magnet_mount, relief_only = relief_only);
+								magnet_mount(r_pad = r_pad_effector_magnet_mount, h_pad = h_effector_magnet_mount, relief_only = relief_only, od_magnet = od_magnet, h_magnet = h_magnet, d_bearing_with_magnet = d_bearing_with_magnet);
 						}
 					}
 				}
@@ -926,10 +927,22 @@ module board_mount(
 	length = 10,
 	width = t_board + 8,
 	d_wire_guide = t_board + .2,
-	wire_guide_offset = 4
+	wire_guide_offset = 4,
+	round = false
 ) {
 	difference() {
-		cube([length, width, height], center = true);
+		if (round) {
+			union() {
+				translate([0, 0, width / 2])
+					cube([length, width, height - width], center = true);
+				translate([0, 0, -height / 2 + width]) {
+					rotate([0, 90, 0])
+						cylinder(d = width, h = length, center = true);
+				}
+			}
+		}
+		else
+			cube([length, width, height], center = true);
 
 		rotate([0, 90, 0])
 			hull()
@@ -937,8 +950,6 @@ module board_mount(
 					translate([i * height / 2 - d_wire_guide / 2 - wire_guide_offset, 0, 0])
 						rotate([0, 0, 30])
 							cylinder(r = d_wire_guide / 2, h = length + 1, center = true, $fn = 6);
-		for (i = [-1, 1]) {
-		}
 	}
 }
 

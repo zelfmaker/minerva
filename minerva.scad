@@ -22,6 +22,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 // requires the common delta modules
 include <include/simple_delta_common.scad>
 
+// Variables {{{
 /************  layer_height is important - set it to the intended print layer height  ************/
 layer_height = 0.33; // layer height that the print will be produced with
 
@@ -40,7 +41,9 @@ $fn = 48;
 pi = 3.1415926535897932384626433832795;
 
 // Thickness of wooden boards.
-t_board = 6;
+t_board = 5.2;
+// Length of vertical boards.
+l_board = 595;
 
 // bar clamp dims
 t_bar_clamp = 8;
@@ -58,9 +61,13 @@ cc_motor_mounts = 75; // c-c of mounts on idler end
 
 // magnetic ball joint dims
 d_ball_bearing = 9.5;
+d_ball_bearing2 = 12;
 od_magnet = 10;
 h_magnet = 2.8;
+od_magnet2 = 12;
+h_magnet2 = 4.8;
 d_bearing_with_magnet = 10.9;
+d_bearing_with_magnet2 = 12.03;
 h_carriage_magnet_mount = 9;
 h_effector_magnet_mount = 10;
 r_pad_carriage_magnet_mount = 2;
@@ -72,14 +79,14 @@ t_tierod = 3.2;	// thickness of tie rod plates - typically 3
 w_tierod = 3 * t_tierod;
 w2_tierod = 4 * t_tierod;
 tierod_fraction = 0.25;	// Fraction of the bearing ball's surface that makes contact.
-d_tierod = 5.2;
+d_tierod = 5.5;
 h_tierod_cap = 25;
 h_tierod_wall = 10;
 
 // printer dims
 r_printer = 175; // radius of the printer, distance from printer center to guide rod centers - typically 175
 l_tierod = 250 + 2 * h_tierod_wall + d_ball_bearing; // length of the tie rods - typically 250
-l_guide_rods = 600; // length of the guide rods
+l_guide_rods = 610; // length of the guide rods, including extra space; actual rods are 600mm.
 
 // belt, pulley and idler dims
 idler = bearing_608;
@@ -125,7 +132,8 @@ l_mount = 40; // length of said tabs
 cc_mount_holes = 16;
 l_base_mount = l_mount;
 w_base_mount = 14.1;
-t_base_mount = 6.0;
+t_pcb = 1.6;
+t_base_mount = 4.0 + t_pcb;
 r_base_mount = 3;
 l_mount_slot = 0; // length of the slot for mounting screw holes
 
@@ -241,7 +249,7 @@ d_top_magnet = 22;
 h_top_magnet = 3;
 cc_top_magnets_x = l_alu - d_top_magnet;
 cc_top_magnets_y = 50 - d_top_magnet / 2;
-
+// }}}
 
 if (echo_dims) {
 	echo(str("Printer radius = ", r_printer));
@@ -258,7 +266,7 @@ if (echo_dims) {
 }
 
 // minerva_end_idler is the structural component to which idler bearings and guide rods are attached
-module minerva_end_idler(z_offset_guides = 8) {
+module minerva_end_idler(z_offset_guides = 8) { // {{{
 	id_wire_retainer = 10; // the id of the hull forming the wire retainer
 	union() {
 		difference() {
@@ -277,36 +285,13 @@ module minerva_end_idler(z_offset_guides = 8) {
 						height = h_apex,
 						cc_mount = cc_idler_mounts,
 						base_mount = false,
-						echo = echo_dims
+						debug = echo_dims
 					);
 
 				for (i = [-1, 1]) {
 					h_platform = h_motor_screw - 4 - t_board;	// Height of the platform to make the bolt fit.
 					translate([i * (l_clamp / 2 + 5), w_clamp / 2 - 7, -h_clamp / 2 + h_platform / 2]) {
 						round_box(27, 14, h_platform);
-
-						// a wire retainer
-						translate([i * -6, 11 / 2, h_platform / 2]) {
-							rotate([90, 0, 0]) {
-								difference() {
-									hull() {
-										for (j = [-1, 1]) {
-											translate([j * 3, 0, 0])
-												cylinder(r = id_wire_retainer / 2 + 3, h = 3, center = true);
-										}
-									}
-
-									hull() {
-										for (j = [-1, 1])
-											translate([j * 3, 0, 0])
-												cylinder(r = id_wire_retainer / 2, h = 4, center = true);
-									}
-
-									translate([0, -id_wire_retainer, 0])
-										cube([id_wire_retainer * 3, id_wire_retainer * 2 - 1, 4], center = true);
-								}
-							}
-						}
 					}
 				}
 				if (clamp) {
@@ -315,8 +300,8 @@ module minerva_end_idler(z_offset_guides = 8) {
 				}
 			}
 			// Vertical board.
-			translate([0, w_clamp / 2 + t_board / 2 + w_alu / 2, 0])
-				cube([clamp ? l_alu : v_width, t_board + w_alu, h_clamp + 1], center = true);
+			translate([0, w_clamp / 2 + t_board / 2 + w_alu / 2, 1 + 2 * z_offset_guides + l_guide_rods - l_board])
+				cube([clamp ? l_alu : v_width, t_board + w_alu, h_clamp + 2], center = true);
 
 			if (clamp) {
 				for (k = [-1, 0, 1]) {
@@ -340,9 +325,14 @@ module minerva_end_idler(z_offset_guides = 8) {
 							cube([3, w_channel + 2, 2], center = true);
 					}
 				}
-			translate([l_clamp / 2 - 28.5, -w_clamp / 2 + channel_offset, -h_clamp / 2])
-				rotate([atan((channel_offset * 1.5) / h_clamp), 0, 0])
-					cylinder(d = w_channel, h = h_clamp);
+			hull() {
+				for (y = [0, -1]) {
+					translate([l_clamp / 2 - 28.5, -w_clamp / 2 + channel_offset + y * 10, -h_clamp / 2]) {
+						rotate([atan((channel_offset * 1.5) / h_clamp), 0, 0])
+							cylinder(d = w_channel, h = h_clamp);
+					}
+				}
+			}
 
 			// place the idler shaft such that the belt is parallel with the pulley - the belt connection will be on the right looking down the vertical axis
 			translate([-offset_idler, 0, 0]) // update 09212014
@@ -350,8 +340,8 @@ module minerva_end_idler(z_offset_guides = 8) {
 					union() {
 						cylinder(r = id_idler / 2, h = w_clamp + 2, center = true);
 
-						translate([0, 0, -w_clamp / 2])
-							cylinder(r = d_idler_shaft_head / 2, h = 2 * h_idler_shaft_head, center = true, $fn = 6);
+						translate([0, 0, -w_clamp / 2 - t_board])
+							 cylinder(r = d_idler_shaft_head / 2, h = 2 * h_idler_shaft_head, center = true, $fn = 6);
 					}
 
 			// idler will be two bearing thick plus two washers
@@ -376,7 +366,7 @@ module minerva_end_idler(z_offset_guides = 8) {
 
 			if (!clamp) {
 				// relief for vertical boards
-				translate([0, 0, z_offset_guides - h_clamp / 2 + 3])
+				translate([0, 0, z_offset_guides + (l_guide_rods - l_board) / 2])
 					vertical_board_relief();
 			}
 
@@ -390,11 +380,18 @@ module minerva_end_idler(z_offset_guides = 8) {
 									cylinder(r = 4, h = 13, center = true);
 
 			// wire passage
-			for (i = [-1, 1])
-				translate([i * (cc_idler_mounts / 2 + 30), -w_clamp - 5, -h_clamp / 2 + 2.5])
-					rotate_extrude(convexity = 10)
-						translate([42, 0, 0])
-							circle(r = 2);
+			for (i = [-1, 1]) {
+				translate([i * (cc_idler_mounts / 2 + 30), -w_clamp - 5, -h_clamp / 2 + 2.5]) {
+					rotate_extrude(convexity = 10) {
+						hull() {
+							for (z = [0, -1]) {
+								translate([42, z * 10])
+									circle(r = 2);
+							}
+						}
+					}
+				}
+			}
 		}
 
 		// floor for guide rod pockets
@@ -402,10 +399,10 @@ module minerva_end_idler(z_offset_guides = 8) {
 			translate([i * cc_guides / 2, 0, h_bar_clamp / 2 + layer_height])
 				cylinder(r = d_guides / 2 + 1, h = layer_height);
 	}
-}
+} // }}}
 
 // minerva_end_motor is the structural component to which motors and guide rods are attached
-module minerva_end_motor(z_offset_guides = 8, clamp = false) {
+module minerva_end_motor(z_offset_guides = 8, clamp = false) { // {{{
 	h_brace = 8; // height of cross brace triangle
 	b_brace = equilateral_base_from_height(h_brace);
 	r_wire_guide = 12;
@@ -427,23 +424,9 @@ module minerva_end_motor(z_offset_guides = 8, clamp = false) {
 						height = h_apex,
 						cc_mount = cc_motor_mounts,
 						base_mount = true,
-						echo = echo_dims
+						debug = echo_dims
 					);
 
-				// wire guide
-				for (i = [-1, 1])
-					translate([i * l_clamp / 2, w_clamp / 2 - r_wire_guide, (h_wire_guide - h_clamp) / 2])
-						difference() {
-							hull()
-								for (j = [-i * 1, i * 0.4])
-									translate([j * 4, 0, 0])
-										cylinder(r = r_wire_guide, h = h_wire_guide, center = true);
-
-							hull()
-								for (j = [-i * 1, i * 0.4])
-									translate([j * 4, 0, 0])
-										cylinder(r = r_wire_guide - 3, h = h_wire_guide + 1, center = true);
-						}
 				if (clamp) {
 					translate([0, w_clamp / 2 + w_alu / 2 - 6 / 2, 0])
 						cube([l_clamp + 2 * d_M3_washer, 6 - 1, h_clamp], center = true);
@@ -469,17 +452,17 @@ module minerva_end_motor(z_offset_guides = 8, clamp = false) {
 			}
 
 			// Inner body.
-			translate([0, h_motor_pad / 2, (l_NEMA17 - h_clamp) / 2])
+			translate([0, h_motor_pad / 2, (l_NEMA17 - h_clamp) / 2]) {
 				round_box(
 					length = l_idler_relief,
 					width = w_idler_relief - h_motor_pad,
 					height = h_clamp + h_clamp_foot * 2 + 2,
 					radius = r_idler_relief
 				);
-
+			}
 
 			// motor mount
-			translate([0, 0, (l_NEMA17 - h_clamp) / 2])
+			translate([0, 0, (l_NEMA17 - h_clamp) / 2]) {
 				rotate([90, 0, 0]) {
 					NEMA_parallel_mount(
 						height = w_clamp + 2,
@@ -493,12 +476,13 @@ module minerva_end_motor(z_offset_guides = 8, clamp = false) {
 						}
 					}
 
-				// tear drop motor opening to improve printing
-				hull() {
-					cylinder(r = NEMA17[1] / 2, h = w_clamp + 2, center = true);
+					// tear drop motor opening to improve printing
+					hull() {
+						cylinder(r = NEMA17[1] / 2, h = w_clamp + 2, center = true);
 
-					translate([0, h_clamp / 2 - 8, 0])
-						cylinder(r = 1, h = w_clamp + 2, center = true);
+						translate([0, h_clamp / 2 - 8, 0])
+							cylinder(r = 1, h = w_clamp + 2, center = true);
+					}
 				}
 			}
 
@@ -511,17 +495,25 @@ module minerva_end_motor(z_offset_guides = 8, clamp = false) {
 
 			// relief for vertical boards
 			if (!clamp) {
-				translate([0, 0, h_clamp / 2 - z_offset_guides - 3])
+				translate([0, 0, -(h_clamp / 2 - z_offset_guides - 3)])
 					vertical_board_relief();
 			}
 
 			// wire passage
-			for (i = [-1, 1])
-				translate([i * (cc_guides / 2 + 30), -w_clamp - 5, -h_clamp / 2 + 10])
-					rotate_extrude(convexity = 10)
-						translate([40, 0, 0])
-							scale([0.75, 1, 1])
-								circle(r = 5);
+			for (i = [-1, 1]) {
+				translate([i * (cc_guides / 2 + 30), -w_clamp - 5, h_clamp / 2 - 5]) {
+					rotate_extrude(convexity = 10) {
+						hull() {
+							for (y = [0, 10]) {
+								translate([40, y]) {
+									scale([0.75, 1, 1])
+										circle(r = 5);
+								}
+							}
+						}
+					}
+				}
+			}
 		}
 
 		// cross bracing to minimize motor torquing into box
@@ -537,9 +529,9 @@ module minerva_end_motor(z_offset_guides = 8, clamp = false) {
 				cylinder(r = d_guides / 2 + 1, h = 0.3);
 
 	}
-}
+} // }}}
 
-module minerva_clamp(floor, hole_offset, fraction) {
+module minerva_clamp(floor, hole_offset, fraction) { // {{{
 	t_floor = [0, h_clamp_foot, t_board][floor];
 	union() {
 		difference() {
@@ -605,9 +597,9 @@ module minerva_clamp(floor, hole_offset, fraction) {
 			}
 		}
 	}
-}
+} // }}}
 
-module minerva_top_magnet_mount() {
+module minerva_top_magnet_mount() { // {{{
 	difference() {
 		cube([l_clamp + 2 * d_M3_washer, cc_top_magnets_y + d_top_magnet + 3, 6], center = true);
 		translate([0, cc_top_magnets_y / 2, 6 / 2 - h_top_magnet])
@@ -624,7 +616,7 @@ module minerva_top_magnet_mount() {
 			}
 		}
 	}
-}
+} // }}}
 
 d_top_mount_relief = 22 + 1;
 d_top_mount = d_top_mount_relief + 2 * 3;
@@ -633,15 +625,15 @@ h_top_mount = d_top_mount_relief / 2 + z_top_mount + 3;
 top_mount_safe = d_top_mount / 2;
 top_mount_safe2 = top_mount_safe + cc_top_magnets_y * sin(60);
 
-module top_mount_parts() {
+module top_mount_parts() { // {{{
 	cylinder(d = d_top_mount, h = h_top_mount);
 	for (i = [-1, 1]) {
 		translate([i * cc_top_magnets_x / 2, -cc_top_magnets_y, 0])
 			cylinder(d = d_top_mount, h = h_top_mount);
 	}
-}
+} // }}}
 
-module top_mount_relief() {
+module top_mount_relief() { // {{{
 	translate([0, 0, z_top_mount]) {
 		sphere(d = d_top_mount_relief);
 		for (i = [-1, 1]) {
@@ -649,23 +641,23 @@ module top_mount_relief() {
 				sphere(d = d_top_mount_relief);
 		}
 	}
-}
+} // }}}
 
-module top_mount() {
+module top_mount() { // {{{
 	difference() {
 		hull() {
 			top_mount_parts();
 		}
 		top_mount_relief();
 	}
-}
+} // }}}
 
 d_spindlescrews = 4.5;
 a_spindlescrews = 25;
 d_spindlebody = 52;
 d_spindlering = 26;
 
-module spindle_mount() {
+module spindle_mount() { // {{{
 	rotate([180, 0, 0]) {
 		difference() {
 			hull() {
@@ -686,9 +678,9 @@ module spindle_mount() {
 			}
 		}
 	}
-}
+} // }}}
 
-module minerva_free_belt_terminator(h_floor = 3) {
+module minerva_free_belt_terminator(h_floor = 3) { // {{{
 	h_belt_terminator = h_belt + h_floor;
 	rotate([90, 0, 0]) {
 		difference() {
@@ -697,16 +689,16 @@ module minerva_free_belt_terminator(h_floor = 3) {
 			dog_relief(l_belt_dog);
 		}
 	}
-}
+} // }}}
 
-module minerva_belt_terminators() {
+module minerva_belt_terminators() { // {{{
 	for (i = [0:3]) {
 		rotate([0, 0, i * 120]) {
 			translate([50, 0, 0])
 				minerva_free_belt_terminator();
 		}
 	}
-}
+} // }}}
 
 /**********
 						following are carriages for the Minerva
@@ -715,7 +707,7 @@ module minerva_belt_terminators() {
 **********/
 
 // minerva_basic_carriage does not have magnet mounts required for fixed tool mode
-module minerva_basic_carriage() {
+module minerva_basic_carriage() { // {{{
 	union() {
 		difference() {
 			union() {
@@ -744,10 +736,10 @@ module minerva_basic_carriage() {
 				cube([2 * cc_guides, 4 * (od_lm8uu + 6), h_carriage], center = true);
 		}
 	}
-}
+} // }}}
 
 // minerva_carriage is required if the platform will be used in fixed tool mode
-module minerva_carriage(linear_bearing = bearing_lm8uu, extra = 0, name) {
+module minerva_carriage(linear_bearing = bearing_lm8uu, extra = 0, name) { // {{{
 	total_h = h_carriage + (extra >= 0 ? h_carriage + extra : 0);
 	union() {
 		difference() {
@@ -799,7 +791,7 @@ module minerva_carriage(linear_bearing = bearing_lm8uu, extra = 0, name) {
 			}
 		}
 	}
-}
+} // }}}
 
 /**********
 						following for the limit switch required for fixed tool mode operation
@@ -817,7 +809,7 @@ l_switch_channel = 12.5;
 w_switch_channel = 2.5;
 h_switch_channel = 3;	// Horizontal part.
 bottom_switch_gap = 2;
-module bottom_limit_switch() {
+module bottom_limit_switch() { // {{{
 	difference() {
 		// Body.
 		translate([-l_bottom_switch / 2, -w_bottom_switch + d_guides / 2 + bottom_switch_wall, 0])
@@ -845,10 +837,10 @@ module bottom_limit_switch() {
 		translate([-l_bottom_switch / 2 - 1, -bottom_switch_gap / 2, -1])
 			cube([l_bottom_switch + 2, bottom_switch_gap, h_bottom_switch + 2]);
 	}
-}
+} // }}}
 
 // central_limit_switch permits mounting a switch on the interior of vertical boards
-module central_limit_switch() {
+module central_limit_switch() { // {{{
 l_switch_mount = 20;
 w_switch_mount = 10;
 h_switch_mount = 20;
@@ -874,7 +866,7 @@ difference() {
 						translate([j * 2.5, 0, 0])
 							cylinder(r = d_M3_screw / 2 + 0.25, h = 13, center = true);
 }
-}
+} // }}}
 
 /**********
 						following for mounting controller boards to the base of the platform
@@ -882,9 +874,7 @@ difference() {
 **********/
 
 // BBB_mount is for mounting a Beaglebone Black to the base of the platform
-module BBB_mount(
-bbb_standoff = 6,
-mount_offset = 14) {
+module BBB_mount(bbb_standoff = 6, mount_offset = 14) { // {{{
 // standoff is the total height of the mount
 // offset is the location of the mounting holes for mounting to whatever, in the case of Minerva, the underside of the base
 slope0_2 = (bbb_hole2[1] - bbb_hole0[1]) / (bbb_hole2[0] - bbb_hole0[0]);
@@ -918,14 +908,14 @@ difference() {
 	translate([bbb_hole2[0] - mount_offset, bbb_hole2[1] - mount_offset * slope0_2, 0])
 		cylinder(r = d_M3_screw / 2, h = bbb_standoff + 1, center = true);
 }
-}
+} // }}}
 
 /**********
 						following are various holders for convenience, not necessary for construction of platform
 **********/
 
 // minerva_tool_holder is an object to be mounted on a vertical board for holding effector tools
-module minerva_tool_holder(wood_mount = false) {
+module minerva_tool_holder(wood_mount = false) { // {{{
 // a tool holder for the side of the printer
 l_mount = 2 * d_small_effector_tool_magnet_mount * cos(60);
 w_mount = 16;
@@ -977,144 +967,182 @@ mirror([0, 0, (wood_mount) ? 0 : 1]) // want to flip it over if aluminum mountin
 				rotate([90, 0, 0])
 					cylinder(r = d_M3_screw / 2, h = 5, center = true);
 	}
-}
+} // }}}
 
-module minerva_spool_holder(
-		render_mount = false,
-		render_holder = false,
-		mount_wood = false) {
-	// spool holder to mount to vertical board
+h_spool_holder = h_motor_screw - 1;	// Use same length screws when possible.
+d_spool_pivot = 14;
+h_spool_pivot = h_spool_holder / 2;
+module minerva_spool_arm() { // {{{
+	l_holder = 140;
+	w_holder = 30;
+	translate([0, (render_mount) ? (w_mount + h_spool_holder) / 2 + 2 : 0, 0]) {
+		// Arm.
+		translate([0, -h_spool_holder / 2, w_holder / 2]) {
+			rotate([90, 0, 0]) {
+				union() {
+					difference() {
+						hull()
+							for (i = [-1, 1]) {
+								r = (i == -1 ? 1 : .7) * w_holder / 2 / cos(30);
+								translate([i * (l_holder - w_holder) / 2, -w_holder / 2 + r * cos(30), 0])
+									cylinder(r = r, h = h_spool_holder, center = true, $fn = 6);
+							}
+
+						// Pivot hole.
+						translate([-(l_holder - w_holder) / 2, 0, (h_spool_holder - h_spool_pivot ) / 2]) {
+							cylinder(d = d_spool_pivot + 0.5, h = h_spool_pivot + 1, center = true);
+
+							translate([0, 0, -h_spool_pivot * 3 / 2 - .1])
+								cylinder(d1 = d_spool_pivot + 6, d2 = d_spool_pivot + 0.5, h = h_spool_holder - h_spool_pivot + .2);
+						}
+
+						// Narrow towards end.
+						translate([10, 0, h_spool_holder / 2 + 2.75])
+							rotate([0, 5, 0])
+								cube([l_holder, w_holder + 1, h_spool_holder], center = true);
+
+						// Down towards end (hook).
+						translate([7, 17, 0]) {
+							rotate([0, 0, -7]) {
+								hull() {
+									translate([5, 0, 0])
+										cube([l_holder - 45, w_holder, h_spool_holder + 1], center = true);
+									translate([-(l_holder - 35) / 2 + 5, -w_holder / 2 + 5, 0])
+										cylinder(d = 10, h = w_holder + 2, center = true);
+									translate([-(l_holder - 35) / 2 - 10, w_holder / 2, 0])
+										cylinder(d = 10, h = w_holder + 2, center = true);
+								}
+							}
+						}
+					}
+
+					// Stop block.
+					translate([-l_holder / 2 + 26, (4 - w_holder) / 2, 7])
+						difference() {
+							cube([10, 4, 10], center = true);
+
+							translate([10, 0, h_spool_holder / 2 + 3])
+								rotate([0, 7, 0])
+									cube([l_holder, w_holder + 1, h_spool_holder], center = true);
+						}
+				}
+			}
+		}
+	}
+} // }}}
+
+module minerva_spool_retainer() { // {{{
+	difference() {
+		cylinder(r1 = d_spool_pivot / 2 + 0.25, r2 = d_spool_pivot / 2 + 3, h = h_spool_holder - h_spool_pivot);
+
+		translate([0, 0, -1])
+			cylinder(d = d_M3_screw, h = h_spool_holder);
+		translate([0, 0, 5])
+			cylinder(d = d_M3_washer, h = h_spool_holder);
+	}
+} // }}}
+
+module minerva_spool_mount(mount_wood = true) { // {{{
 	l_mount = 28;
 	w_mount = t_board + 8;
 	h_mount = 30;
-	l_holder = 140;
-	w_holder = 20;
-	h_holder = h_motor_screw - 1;	// Use same length screws when possible.
-	d_pivot = 14;
-	h_pivot = h_holder / 2;
-
-	if (render_mount) {
-		translate([0, 0, h_mount / 2]) {
-			difference() {
-				union() {
-					if (mount_wood)
-						mirror([0, 0, 1])
-							board_mount(
-								height = h_mount,
-								length = l_mount,
-								width = w_mount,
-								wire_guide_offset = 8);
-					else
-						difference() {
-							cube([l_mount, w_member + 8, h_mount], center = true);
-
-							translate([0, 0, -4])
-								cube([l_mount + 1, w_member, 6], center = true);
-						}
-
-					translate([-1, 0, (h_pivot + h_mount) / 2 - 0.5])
-						difference() {
-							cylinder(r = d_pivot / 2, h = h_pivot + 1, center = true);
-
-							cylinder(d = d_M3_screw - 0.2, h = h_pivot + 2, center = true);
-						}
-				}
-
-				// Pivot path.
-				translate([-1, 0, h_mount / 2 - 5])
-					intersection() {
-						rotate_extrude(convexity = 10)
-							translate([8, 0, 0])
-								square([10, 6]);
-
-						rotate([0, 0, 80])
-							translate([-l_mount / 2 + 6, w_mount / 2, 5])
-								cube([20, 20, 10], center = true);
-					}
-
+	translate([0, 0, h_mount / 2]) {
+		difference() {
+			union() {
 				if (mount_wood)
-					// Screw holes.
-					translate([0, -w_mount / 2, -h_mount / 2 + 5])
-						rotate([90, 0, 0])
-							for (i = [-1, 1]) {
-								translate([i * 8, 0, -w_mount / 2])
-									cylinder(d = 3, h = w_mount + 2, center = true);
-								translate([i * 8, 0, -w_mount - h_M3_nut / 2])
-									cylinder(d = d_M3_nut, h = h_M3_nut, $fn = 6);
-							}
-				else {
-					translate([-1, 3, -1 + layer_height])
-						cylinder(r = d_M3_screw / 2, h = h_mount + h_pivot + 3);
+					mirror([0, 0, 1])
+						board_mount(
+							height = h_mount,
+							length = l_mount,
+							width = w_mount,
+							wire_guide_offset = 8);
+				else
+					difference() {
+						cube([l_mount, w_member + 8, h_mount], center = true);
 
-	//						translate([0, 0, h_pivot])
-	//							cylinder(r = d_M3_cap / 2, h = h_M3_cap + 1, center = true);
+						translate([0, 0, -4])
+							cube([l_mount + 1, w_member, 6], center = true);
+					}
+
+				translate([-1, 0, (h_spool_pivot + h_mount) / 2 - 0.5])
+					cylinder(r = d_spool_pivot / 2, h = h_spool_pivot + 1, center = true);
+
+			}
+
+			// Screw hole.
+			translate([-1, 0, 0]) { //(h_spool_pivot + h_mount) / 2 - 0.5])
+				cylinder(d = d_M3_screw, h = h_spool_pivot + h_mount / 2 + 1);
+				cylinder(d = d_M3_nut, h = h_mount / 2 + h_spool_pivot - 5, $fn = 6);
+			}
+
+			// Pivot path.
+			translate([-1, 0, h_mount / 2 - 5])
+				intersection() {
+					rotate_extrude(convexity = 10)
+						translate([8, 0, 0])
+							square([10, 6]);
+
+					rotate([0, 0, 80])
+						translate([-l_mount / 2 + 6, w_mount / 2, 5])
+							cube([20, 20, 10], center = true);
 				}
+
+			if (mount_wood)
+				// Screw holes.
+				translate([0, -w_mount / 2, -h_mount / 2 + 5])
+					rotate([90, 0, 0])
+						for (i = [-1, 1]) {
+							translate([i * 8, 0, -w_mount / 2])
+								cylinder(d = 3, h = w_mount + 2, center = true);
+							translate([i * 8, 0, -w_mount - h_M3_nut / 2])
+								cylinder(d = d_M3_nut, h = h_M3_nut, $fn = 6);
+						}
+			else {
+				translate([-1, 3, -1 + layer_height])
+					cylinder(r = d_M3_screw / 2, h = h_mount + h_spool_pivot + 3);
+
+//						translate([0, 0, h_spool_pivot])
+//							cylinder(r = d_M3_cap / 2, h = h_M3_cap + 1, center = true);
 			}
 		}
 	}
+} // }}}
 
-	if (render_holder) {
-		translate([0, (render_mount) ? (w_mount + h_holder) / 2 + 2 : 0, 0]) {
-			// Arm.
-			translate([0, 0, w_holder / 2]) {
+module minerva_wire_guide() { // {{{
+	l_mount = 28;
+	w_mount = t_board + 8;
+	h_mount = 30;
+	translate([0, 0, h_mount / 2]) {
+		difference() {
+			union() {
+				mirror([0, 0, 1]) {
+					board_mount(
+						height = h_mount,
+						length = l_mount,
+						width = w_mount,
+						wire_guide_offset = 8,
+						round = true);
+				}
+			}
+
+			// Screw holes.
+			translate([0, -w_mount / 2, -h_mount / 2 + 5]) {
 				rotate([90, 0, 0]) {
-					union() {
-						difference() {
-							hull()
-								for (i = [-1, 1])
-									translate([i * (l_holder - w_holder) / 2, 0, 0])
-										cylinder(r = w_holder / 2 / cos(30), h = h_holder, center = true, $fn = 6);
-
-							// Pivot hole.
-							translate([-(l_holder - w_holder) / 2, 0, (h_holder - h_pivot ) / 2]) {
-								cylinder(d = d_pivot + 0.5, h = h_pivot + 1, center = true);
-
-								translate([0, 0, -h_pivot * 3 / 2 - .1])
-									cylinder(d1 = d_pivot + 6, d2 = d_pivot + 0.5, h = h_holder - h_pivot + .2);
-							}
-
-							// Narrow towards end.
-							translate([10, 0, h_holder / 2 + 2.75])
-								rotate([0, 5, 0])
-									cube([l_holder, w_holder + 1, h_holder], center = true);
-
-							// Down towards end (hook).
-							translate([10, 14, 0])
-								rotate([0, 0, -7])
-									cube([l_holder - 35, w_holder, h_holder + 1], center = true);
-						}
-
-						// Stop block.
-						translate([-l_holder / 2 + 20, (4 - w_holder) / 2, 7])
-							difference() {
-								cube([10, 4, 10], center = true);
-
-								translate([10, 0, h_holder / 2 + 3])
-									rotate([0, 7, 0])
-										cube([l_holder, w_holder + 1, h_holder], center = true);
-							}
+					for (i = [-1, 1]) {
+						translate([i * 8, 0, -w_mount / 2])
+							cylinder(d = 3, h = w_mount + 2, center = true);
+						translate([i * 8, 0, -w_mount - h_M3_nut / 2])
+							cylinder(d = d_M3_nut, h = h_M3_nut, $fn = 6);
 					}
 				}
 			}
-
-			// Retainer.
-			translate([0, 20, 0]) {
-				difference() {
-					cylinder(r1 = d_pivot / 2 + 0.25, r2 = d_pivot / 2 + 3, h = h_holder - h_pivot);
-
-					translate([0, 0, -1])
-						cylinder(d = d_M3_screw, h = h_holder);
-				}
-			}
 		}
 	}
-}
+} // }}}
 
 // minerva_hand_tool_holder is an object to mount to a vertical board that wires can be tucked underneath and drivers can be hung on
 // sonicare model E toothbrush ends have nice magnets in them, good for holding scraper
-module minerva_hand_tool_holder(
-		wood_mount = false,
-		sonicare_magnet = false) {
+module minerva_hand_tool_holder(wood_mount = false, sonicare_magnet = false) { // {{{
 	l_mount = 30;
 	w_mount = 22;
 	h_mount = (sonicare_magnet) ? 50 : 30;
@@ -1168,9 +1196,9 @@ module minerva_hand_tool_holder(
 			}
 		}
 	}
-}
+} // }}}
 
-module tool_effector() {
+module tool_effector() { // {{{
 	difference() {
 		effector_base(large = true);
 		for (i = [0:2]) {
@@ -1184,9 +1212,9 @@ module tool_effector() {
 		translate([0, 0, -1])
 			cylinder(d = d_small_effector_tool_mount, h = t_effector + 2);
 	}
-}
+} // }}}
 
-module hotend_tool(
+module hotend_tool( // {{{
 		quickrelease = true,
 		dalekify = false,
 		vent = false,
@@ -1216,9 +1244,9 @@ module hotend_tool(
 			cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 0.1, center = true);
 		}
 	}
-}
+} // }}}
 
-module hotend_retainer() {
+module hotend_retainer() { // {{{
 	rotate([-90, 0, 0]) {
 		translate([0, -(d_large_jhead + 6 + 1) / 2 - (6 - 1) / 2, 0]) {
 			difference() {
@@ -1252,21 +1280,33 @@ module hotend_retainer() {
 			}
 		}
 	}
-}
+} // }}}
 
-module probe_tool() {
+module probe_tool() { // {{{
+	z_switch = 10;
+	active_switch = l_switch / 4;
+	wall = 2;
 	translate([0, 0, t_effector / 2]) {
 		difference() {
 			union() {
-				// TODO.
+				translate([-l_switch / 2 - wall, -w_switch / 2 - wall, 0])
+					cube([l_switch + 2 * wall, w_switch + 2 * wall, t_effector / 2 + h_switch + z_switch]);
 				tool_mount_body(d_small_tool_magnets, t_effector);
 			}
 			tool_mount_bearing_cage(d_small_tool_magnets, t_effector);
+			translate([-l_switch / 2, -w_switch / 2, t_effector / 2 + z_switch])
+				cube([l_switch, w_switch, h_switch + 1]);
+			translate([active_switch, 0, 0]) {
+				translate([0, 0, -t_effector / 2 - 1])
+					cylinder(d = d_M3_screw, h = t_effector + z_switch + h_switch + wall + 2);
+				translate([0, 0, t_effector / 2 + z_switch - 3])
+					cylinder(d = d_M3_washer, h = h_switch + wall + 3 + 1);
+			}
 		}
 	}
-}
+} // }}}
 
-module clamp_tool(d_tool = 13, h_tool = 8) {
+module clamp_tool(d_tool = 13, h_tool = 8) { // {{{
 	translate([0, 0, t_effector / 2]) {
 		difference() {
 			union() {
@@ -1290,14 +1330,14 @@ module clamp_tool(d_tool = 13, h_tool = 8) {
 			}
 		}
 	}
-}
+} // }}}
 
-module clamp_clamp(d_tool = 13, h_tool = 8) {
+module clamp_clamp(d_tool = 13, h_tool = 8) { // {{{
 	rotate([-90, 0, 0]) {
 		translate([0, -6, 0]) {
 			difference() {
 				translate([-(d_tool + 10 + 2 * 6) / 2, 0, 0])
-					cube([d_tool + 10 + 2 * 6, 6, h_tool]);
+					cube([d_tool + 10 + 2 * 6, 10, h_tool]);
 				translate([0, 0, -1]) {
 					scale([1, .5, 1]) 
 						cylinder(d = d_tool, h = h_tool + 2);
@@ -1311,13 +1351,9 @@ module clamp_clamp(d_tool = 13, h_tool = 8) {
 			}
 		}
 	}
-}
+} // }}}
 
-module hotend_effector(
-		quickrelease = true,
-		dalekify = false,
-		vent = false,
-		headless = false) {
+module hotend_effector(quickrelease = true, dalekify = false, vent = false, headless = false) { // {{{
 	difference() {
 		union() {
 			hotend_mount(
@@ -1339,16 +1375,16 @@ module hotend_effector(
 			rotate([0, 0, 60])
 				effector_shroud_holes(diameter = d_M3_screw / 2 - 0.15, height = t_effector + 1 - 2 * layer_height);*/
 	}
-}
+} // }}}
 
-module effector_shroud_holes(diameter, height) {
+module effector_shroud_holes(diameter, height) { // {{{
 	for (i = [0:2])
 		rotate([0, 0, i * 120])
 			translate([0, r2_opening + 4, 0])
 				cylinder(r = diameter, h = height);
-}
+} // }}}
 
-module glass_holddown() {
+module glass_holddown() { // {{{
 	difference() {
 		hull()
 			for (i = [-1,1])
@@ -1365,9 +1401,9 @@ module glass_holddown() {
 		translate([-152, 0, 0])
 			cylinder(r = 152, h = 3, center = true);
 	}
-}
+} // }}}
 
-module ceramic_clamp(side = [-1, 1]) {
+module ceramic_clamp(side = [-1, 1]) { // {{{
 	w = -w_mount / 2 - w_base_mount / 2 + r_base_mount - w_base_mount / 2 + 4;
 	difference() {
 		intersection() {
@@ -1405,9 +1441,9 @@ module ceramic_clamp(side = [-1, 1]) {
 			}
 		}
 	}
-}
+} // }}}
 
-module template_fixed_tool_mount() {
+module template_fixed_tool_mount() { // {{{
 	cc_arm_mounts = 50;
 	v_offset_arm_mount = 20; // offset from the top of the printer vertical
 	y_third_hole = pow(pow(cc_arm_mounts, 2) - pow(cc_arm_mounts / 2, 2), 0.5);
@@ -1431,9 +1467,9 @@ module template_fixed_tool_mount() {
 		translate([0, (v_offset_arm_mount - cc_arm_mounts) / 2 - 5, 1])
 			cube([l_member + 1, cc_arm_mounts + v_offset_arm_mount + 10, 3], center = true);
 	}
-}
+} // }}}
 
-module thumbscrew_quickrelease() {
+module thumbscrew_quickrelease() { // {{{
 	hex = 10.2; // size of hex head, mm
 	r_hex = hex / 2 / cos(30); // radius of hex
 	points = 6; // points in closed end thumbscrew
@@ -1451,11 +1487,9 @@ module thumbscrew_quickrelease() {
 
 		cylinder(r = r_hex, h = h_wrench + 1, center = true, $fn = points);
 	}
-}
+} // }}}
 
-module bbb_melzi_mount(
-		render_small = true,
-		render_large = true) {
+module bbb_melzi_mount(render_small = true, render_large = true) { // {{{
 	// width is short dimension, length is long dimension
 	cc_w_melzi_mounts = 45.75 - 3.75; // c-c of melzi mounts on width axis
 	cc_l_melzi_mounts = 200; // c-c of melzi mounts on length axis
@@ -1607,9 +1641,9 @@ module bbb_melzi_mount(
 					translate([-6, w_melzi / 2, 0])
 						cylinder(r = d_M3_screw / 2, h = h_standoff + 1, center = true);
 				}
-}
+} // }}}
 
-module connector_plate_full(top = true) {
+module connector_plate_full(top = true, usb = true) { // {{{
 	l_bbl_opening = 13.1; // length of barrel connector panel opening.
 	l_bbl_center = 4.5; // distance from top of hole to center of connector.
 	w_bbl_opening = 11; // width of barrel connector panel opening.
@@ -1670,49 +1704,143 @@ module connector_plate_full(top = true) {
 		}
 
 		// barrel connector
-		translate([-(l_plate - w_bbl_opening) / 2 + 1, -l_bbl_center, -1]) {
-			cube([w_bbl_opening, l_bbl_opening, h_plate + 2]);
+		translate([usb ? 0 : 15, 0, 0]) {
+			translate([-(l_plate - w_bbl_opening) / 2 + 1, -l_bbl_center, -1]) {
+				cube([w_bbl_opening, l_bbl_opening, h_plate + 2]);
 
-			translate([-l_bbl_extra, -l_bbl_extra, t_bbl_panel + 1.01])
-				cube([w_bbl_opening + 2 * l_bbl_extra, l_bbl_opening + 2 * l_bbl_extra, h_plate]);
+				translate([-l_bbl_extra, -l_bbl_extra, t_bbl_panel + 1.01])
+					cube([w_bbl_opening + 2 * l_bbl_extra, l_bbl_opening + 2 * l_bbl_extra, h_plate]);
+			}
 		}
 
 		// rj45 jack
-		translate([-12, 0, 0]) {
-			translate([-l_rj45_jack / 2, top_offset_rj45_jack - w_rj45_housing / 2, -1]) {
-				cube([l_rj45_jack, w_rj45_jack, h_plate + 2]);
+		translate([usb ? 0 : 35, 0, 0]) {
+			translate([-12, 0, 0]) {
+				translate([-l_rj45_jack / 2, top_offset_rj45_jack - w_rj45_housing / 2, -1]) {
+					cube([l_rj45_jack, w_rj45_jack, h_plate + 2]);
 
-				translate([-(w_rj45_housing - l_rj45_jack) / 2, -w_plate / 2, t_bbl_panel + 1.01])
-					cube([w_rj45_housing, 2 * w_plate, h_plate]);
+					translate([-(w_rj45_housing - l_rj45_jack) / 2, -w_plate / 2, t_bbl_panel + 1.01])
+						cube([w_rj45_housing, 2 * w_plate, h_plate]);
+				}
+
+				for (i = [-1, 1])
+					translate([i * cc_rj45_mounts / 2, 0, -1])
+						cylinder(r = d_M3_screw / 2, h = h_plate + 2);
 			}
-
-			for (i = [-1, 1])
-				translate([i * cc_rj45_mounts / 2, 0, -1])
-					cylinder(r = d_M3_screw / 2, h = h_plate + 2);
 		}
 
 		// usb jack
-		translate([(l_plate - l_usb_housing) / 2 - 4, 0, 0]) {
-			for (i = [-1, 1]) {
-				translate([i * cc_usb_mounts / 2, 0, -1])
-					cylinder(r = d_M3_screw / 2, h = h_plate + 2);
-			}
+		if (usb) {
+			translate([(l_plate - l_usb_housing) / 2 - 4, 0, 0]) {
+				for (i = [-1, 1]) {
+					translate([i * cc_usb_mounts / 2, 0, -1])
+						cylinder(r = d_M3_screw / 2, h = h_plate + 2);
+				}
 
-			translate([-l_usb_opening / 2, -w_usb_opening / 2, -1])
-				cube([l_usb_opening, w_usb_opening, h_plate + 2]);
+				translate([-l_usb_opening / 2, -w_usb_opening / 2, -1])
+					cube([l_usb_opening, w_usb_opening, h_plate + 2]);
+			}
+		}
+	}
+} // }}}
+
+module connector_plate(usb = true) { // {{{
+	union() {
+		connector_plate_full(true, usb);
+		translate([0, 3, 0])
+			connector_plate_full(false, usb);
+	}
+} // }}}
+
+module bar(x1, y1, x2, y2, d, h) {
+	hull() {
+		translate([x1, y1, 0])
+			cylinder(d = d, h = h);
+		translate([x2, y2, 0])
+			cylinder(d = d, h = h);
+	}
+}
+
+module melzi_mount() {
+	t_base = 2;
+	t_extra = 2;
+	l = 100;
+	w = 80;
+	difference() {
+		union() {
+			bar(0, 0, l, w, 9, t_base);
+			bar(l, 0, 0, w, 9, t_base);
+			bar(0, 0, l, 0, 9, t_base);
+			bar(0, w, l, w, 9, t_base);
+			bar(11.5, 0, 11.5, w, 9, t_base);
+			for (x = [0, l], y = [0, w]) {
+				translate([x, y, t_base / 2])
+					cylinder(d = 8, h = t_base / 2 + t_extra);
+			}
+			translate([0, -2.5 - 2, t_base / 2])
+				cube([100, 2, t_base / 2 + t_extra]);
+			translate([0, .5, t_base / 2])
+				cube([100, 3, t_base / 2 + t_extra]);
+			for (y = [-1:2]) {
+				translate([11.5 - 9 / 2, 46 + (y - .5) * 13 - 8 / 2, t_base / 2])
+					cube([9, 8, t_base / 2 + t_extra]);
+			}
+		}
+		for (x = [0, l], y = [0, w]) {
+			translate([x, y, -1]) {
+				cylinder(d = d_M3_screw, h = t_base + t_extra + 2);
+				cylinder(d = d_M3_nut, h = h_M3_nut + 1, $fn = 6);
+			}
 		}
 	}
 }
 
-module connector_plate() {
-	union() {
-		connector_plate_full(true);
-		translate([0, 3, 0])
-			connector_plate_full(false);
+module orangepizero_mount() {
+	t_base = 2;
+	t_extra = 2;
+	l = 42;
+	w = 40;
+	difference() {
+		union() {
+			bar(0, 0, l, w, 9, t_base);
+			bar(l, 0, 0, w, 9, t_base);
+			for (x = [0, l], y = [0, w]) {
+				translate([x, y, t_base / 2])
+					cylinder(d = (x == 0 && y != 0 ? 6 : 8), h = t_base / 2 + t_extra);
+			}
+		}
+		for (x = [0, l], y = [0, w]) {
+			translate([x, y, -1]) {
+				if (x != 0 || y == 0) {
+					cylinder(d = d_M3_screw, h = t_base + t_extra + 2);
+					cylinder(d = d_M3_nut, h = h_M3_nut + 1, $fn = 6);
+				}
+			}
+		}
 	}
 }
 
-module hexagon(r1, r2) {
+module electronics_spacer(mid = false) {
+	length = mid ? 35 : 50;
+	t_base = 2;
+	t_extra = 2;
+	difference() {
+		union() {
+			bar(0, 0, length, 0, 6, 5);
+			cylinder(d = 6, h = h_motor_screw - t_base - t_extra - t_pcb);
+			if (mid) {
+				translate([length, 0, 0])
+					cylinder(d = 6, h = h_motor_screw - t_base - t_extra - t_pcb);
+			}
+		}
+		for (x = [0, length]) {
+			translate([x, 0, -1])
+				cylinder(d = d_M3_screw, h = 16 + 2);
+		}
+	}
+}
+
+module hexagon(r1, r2) { // {{{
 	r_corner = 5;
 	minkowski() {
 		intersection() {
@@ -1722,9 +1850,9 @@ module hexagon(r1, r2) {
 		}
 		circle(r = r_corner);
 	}
-}
+} // }}}
 
-module minerva_hexagon(top_mount = false) {
+module minerva_hexagon(top_mount = false) { // {{{
 	difference() {
 		union() {
 			hexagon(r_printer - w_clamp / 2, r_brd(cc_idler_mounts));
@@ -1775,9 +1903,9 @@ module minerva_hexagon(top_mount = false) {
 				text(msg[i], size = 7, halign = "left", valign = "baseline");
 		}
 	}
-}
+} // }}}
 
-module linking_board(idler, slot, marking1, marking2, message) {
+module linking_board(idler, slot, marking1, marking2, message) { // {{{
 	w = l_brd(idler ? cc_idler_mounts : cc_motor_mounts);
 	difference() {
 		square([w, h_apex]);
@@ -1809,13 +1937,15 @@ module linking_board(idler, slot, marking1, marking2, message) {
 			}
 		}
 	}
-}
+} // }}}
 
-module vertical_board(v, z_offset_guides, marking) {
-	size = l_guide_rods + 2 * z_offset_guides;
+module vertical_board(v, z_offset_guides, marking) { // {{{
+	size = l_board;
 	difference() {
 		square([size, v_width]);
-		for (x = [[h_clamp / 2, z_offset_guides + 3], [size - h_clamp / 2, size - z_offset_guides - 3]]) {
+			//translate([0, 0, z_offset_guides + (l_guide_rods - l_board) / 2])
+		echo(size - h_clamp / 2 + (z_offset_guides + (l_guide_rods - l_board) / 2), size);
+		for (x = [[h_clamp / 2, h_clamp - z_offset_guides - 3], [size - h_clamp / 2, size - h_clamp / 2 + (z_offset_guides + (l_guide_rods - l_board) / 2)]]) {
 			translate([x[0], v_width / 2]) {
 				rotate([0, 0, -90])
 					text(marking, halign = "center", valign = "center");
@@ -1830,16 +1960,23 @@ module vertical_board(v, z_offset_guides, marking) {
 			for (i = [-1, 1]) {
 				ewidth = 60 / sqrt(2) / 2;	// include sqrt(2) because it's a diagonal.
 				eheight = size / 3 * 2;
+				// Extruder mount
 				translate([eheight + i * ewidth, v_width / 2 - i * ewidth])
 					circle(d = 3);
+				// Spool holder
 				translate([eheight - 150 - i * spool_mount_dist / 2, 20 - 8 - 5])
 					circle(d = 3);
+				// Extra wire guides.
+				for (z = [h_clamp + spool_mount_dist, l_board * .6, l_board - h_clamp - spool_mount_dist]) {
+					translate([z - i * spool_mount_dist / 2, 20 - 8 - 5])
+						circle(d = 3);
+				}
 			}
 		}
 	}
-}
+} // }}}
 
-module minerva_h_boards(z_offset_guides = 8) {
+module minerva_h_boards(z_offset_guides = 8) { // {{{
 	union() {
 		for (y = [0, 1, 2]) {
 			translate([h_apex + y * (h_apex + 10), 0]) {
@@ -1866,9 +2003,9 @@ module minerva_h_boards(z_offset_guides = 8) {
 				text(msg[i], size = 7, halign = "left", valign = "baseline");
 		}
 	}
-}
+} // }}}
 
-module minerva_v_boards(z_offset_guides = 8) {
+module minerva_v_boards(z_offset_guides = 8) { // {{{
 	union() {
 		for (y = [0, 1, 2]) {
 			translate([0, y * (l_clamp - 2 * r_base_mount + 10)])
@@ -1889,9 +2026,9 @@ module minerva_v_boards(z_offset_guides = 8) {
 				text(msg[i], size = 7, halign = "left", valign = "baseline");
 		}
 	}
-}
+} // }}}
 
-module tierod_ring() {
+module tierod_ring() { // {{{
 	difference() {
 		circle(d = w2_tierod + w_laser);
 		for (i = [0, 90]) {
@@ -1899,27 +2036,27 @@ module tierod_ring() {
 				square([w_tierod - w_laser, t_tierod - w_laser], center = true);
 		}
 	}
-}
+} // }}}
 
-module minerva_tierod_cap(single = false) {
+module minerva_tierod_cap(single = false) { // {{{
 	// Surface = 2*pi*(1-sin(a)) = 4*pi*f
 	// sin(a) = 1 - 2*f
 	for (y = [0:single ? 0 : 2]) {
 		for (x = [0:single ? 0 : 3]) {
-			translate([x * 10, y * 10, 0]) {
+			translate([x * 14, y * 14, 0]) {
 				difference() {
-					cylinder(r = (d_ball_bearing / 2) * cos(asin(1 - 2 * tierod_fraction)), h = h_tierod_cap + h_tierod_wall);
+					cylinder(r = (d_ball_bearing2 / 2) * cos(asin(1 - 2 * tierod_fraction)), h = h_tierod_cap + h_tierod_wall);
 					translate([0, 0, -1])
 						cylinder(d = d_tierod, h = h_tierod_wall + 1);
 					translate([0, 0, h_tierod_cap + h_tierod_wall])
-						sphere(d = d_ball_bearing);
+						sphere(d = d_ball_bearing2);
 				}
 			}
 		}
 	}
-}
+} // }}}
 
-module minerva_tierod() {
+module minerva_tierod() { // {{{
 	offset = l_tierod / 6;
 	union() {
 		difference() {
@@ -1941,9 +2078,9 @@ module minerva_tierod() {
 		translate([l_tierod / 2 + w2_tierod / 2 + w_laser, 0])
 			tierod_ring();
 	}
-}
+} // }}}
 
-module tierod_assembled() {
+module tierod_assembled() { // {{{
 	translate([0, 0, -t_tierod / 2])
 		linear_extrude(height = t_tierod)
 			minerva_tierod();
@@ -1955,12 +2092,12 @@ module tierod_assembled() {
 		translate([i * l_tierod / 2, 0, 0])
 			%sphere(d = d_ball_bearing);
 	}
-}
+} // }}}
 
 l_pcb = 73;
 w_pcb = 101;
 h_pcb = 1.6;
-module pcb_mount() {
+module pcb_mount() { // {{{
 	difference() {
 		translate([0, 0, d_ball_bearing / 2])
 			cube([l_pcb + d_M3_washer * 2, w_pcb + d_M3_washer * 2, d_ball_bearing], center = true);
@@ -1982,9 +2119,9 @@ module pcb_mount() {
 			}
 		}
 	}
-}
+} // }}}
 
-module hotend_shroud(height, twist) {
+module hotend_shroud(height, twist) { // {{{
 	t_shroud_base = 2.5;
 	t_shroud = 0.6;
 
@@ -2018,6 +2155,6 @@ module hotend_shroud(height, twist) {
 		translate([0, 0, -1])
 			effector_shroud_holes(diameter = d_M3_screw / 2, height = t_shroud_base + 2);
 	}
-}
+} // }}}
 
-// vim: set filetype=c :
+// vim: set filetype=c foldmethod=marker :

@@ -17,21 +17,21 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 
 include <extruder_drive.scad>
 
-part = 5;
+part = "body";
 
-if (part == 1) // optional-blue-extruder-body.stl
-	drive_body(threads = false);
+if (part == "body") // optional-blue-extruder-body.stl
+	drive_body(threads = true);
 
-if (part == 2) // optional-blue-extruder-idler.stl
+if (part == "idler") // optional-blue-extruder-idler.stl
 	extruder_idler_608z();
 
-if (part == 3) // optional-blue-extruder-support-strut.stl
+if (part == "link") // optional-blue-extruder-support-strut.stl
 	support_strut();
 
-if (part == 4) // optional-blue-extruder-axle.stl
+if (part == "axle") // optional-blue-extruder-axle.stl
 	axle_8mm();
 
-if (part == 5) // blue-extruder-1x.stl
+if (part == "extruder") // blue-extruder-1x.stl
 {
 	translate([0,-20,0])
 		rotate([0,0,270])

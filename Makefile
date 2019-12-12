@@ -16,6 +16,6 @@ dxf: build/wood-hexagon-1x.dxf build/wood-h_boards-1x.dxf build/wood-v_boards-1x
 	inkscape -E $@ $<
 
 %.dxf: %.eps
-	pstoedit -psarg -dREALLYDELAYBIND -dt -f dxf:-polyaslines\ -mm $< $@
+	pstoedit -psarg -dREALLYDELAYBIND -dt -f dxf_s:-mm $< $@
 
 .PHONY: all dxf

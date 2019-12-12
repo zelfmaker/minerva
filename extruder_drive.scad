@@ -53,7 +53,7 @@ d_axle = 8;
 
 // following set the dimensions for a given filament [d_sheath, d_filament]
 filament300 = [6.55, 3.4];
-filament175 = [4.5, 2.1];
+filament175 = [4.5, 2.5];
 filament = filament175; // set to one of the two, above
 
 d_sheath = filament[0];
@@ -67,11 +67,11 @@ pitch_quickrelease_threads = 1;
 
 
 t_feet = 5; // thickness of the mounting feet
-t_thin_base = 2; // thickness of the extruder block's back plate
-t_base = 4.7; // thickness of the extruder block's back plate
+t_thin_base = 5; // thickness of the extruder block's back plate
+t_base = 7.7; // thickness of the extruder block's back plate
 
 // rather than rewrite everything (should do that anyway) the following is a total hack
-l_motor = 21;	// Length of motor shaft.
+l_motor = 24;	// Length of motor shaft.
 h_bearing = 5;	// Height of bearing at top of motor.
 z_bearing = l_motor - h_bearing; // Base height of bearing at top of motor.
 z_filament = z_bearing - 4;	// Height of filament path.
@@ -185,7 +185,7 @@ module drive_body(threads = true) { // {{{
 			union() {
 				// Extruder base
 				difference() {
-					hull() {
+					 hull() {
 						for(i = [1:4]) {
 							rotate([0, 0, i * 90 + 45])
 								translate([r_mounts, 0, 0])
@@ -228,8 +228,8 @@ module drive_body(threads = true) { // {{{
 				// Idler clamp.
 				translate([cc_NEMA17_mount / 2, cc_NEMA17_mount / 2, 0]) {
 					rotate([0, 0, a_idler]) {
-						translate([9, 0, (l_screw - l_motor_screw - h_strut / 2) / 2])
-							cube([18, 12, l_screw - l_motor_screw - h_strut / 2], center = true);
+						translate([9, 0, (3 + l_screw - l_motor_screw - h_strut / 2) / 2])
+							cube([18, 12, 3 + l_screw - l_motor_screw - h_strut / 2], center = true);
 					}
 				}
 
@@ -355,9 +355,9 @@ module filament_path(threads) { // {{{
 		}
 
 		// cone opening at inlet to help guide filament into inlet filament path
-		translate([offset_filament, -(cc_NEMA17_mount + 22) / 2 + 3, z_filament]) {
+		translate([offset_filament, -(cc_NEMA17_mount + 22) / 2 + 9, z_filament]) {
 			rotate([90,0,0])
-				cylinder(d1 = d_filament, d2 = d_filament * 2, h = 6, $fn=25);
+				#cylinder(d1 = d_filament, d2 = d_filament * 2, h = 12, $fn=25);
 		}
 
 		// Thread for quick connect.

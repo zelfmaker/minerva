@@ -22,7 +22,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 // include the modules required for rendering
 include <minerva.scad>
 
-part = "clamp-clamp";
+part = "wire-guide";
 plate = "";
 
 // Names have the form:
@@ -80,8 +80,10 @@ if (plate == "motor-end") { // plate-orange-motor-end.stl
 // }}}
 
 // Bar clamps. {{{
-if (part == "bar-clamp") // orange-bar-clamp-12x.stl
+if (part == "bar-clamp") // orange-bar-clamp-6x.stl
 	bar_clamp();
+if (part == "bar-clamp-l") // orange-bar-clamp-long-6x.stl
+	bar_clamp(long = true);
 if (plate == "bar-clamp") { // plate-orange-bar-clamp.stl
 	for (x = [-5:6], y = [-1:1]) {
 		translate([x * 12, y * 35, t_bar_clamp / 2])
@@ -160,7 +162,7 @@ if (part == "tierod-cap") // green-tierod-cap-1x.stl
 	minerva_tierod_cap(); // This contains 12 caps.
 if (plate == "tierod-cap") { // plate-green-tierod-cap.stl
 	for (x = [-8:8], y = [-6:5]) {
-		translate([x * 10, y * 10, 0])
+		translate([x * 14, y * 14, 0])
 			minerva_tierod_cap(single = true);
 	}
 }
@@ -170,15 +172,30 @@ if (plate == "tierod-cap") { // plate-green-tierod-cap.stl
 // TODO Cold end and related parts: blue. {{{
 // TODO: move cold end into this file.
 // mounts to vertical board to which extruder drive is mounted and holds spool - convenience, not required
-if (part == "spool-holder") // blue-spool-holder-1x.stl
-	minerva_spool_holder(render_mount = true, render_holder = true, mount_wood = true);
+if (part == "spool-mount") // blue-spool-mount-1x.stl
+	minerva_spool_mount();
+if (part == "wire-guide") // blue-wire-guide-3x.stl
+	minerva_wire_guide();
+if (part == "spool-arm") // blue-spool-arm-1x.stl
+	minerva_spool_arm();
+if (part == "spool-retainer") // blue-spool-retainer-1x.stl
+	minerva_spool_retainer();
 // }}}
 
 // TODO Electronics: yellow. {{{
 // TODO: Add mounting supports.
 // Mounting plate fits in slotted motor-end linking board
 if (part == "connector-plate") // yellow-connector-plate-1x.stl
-	connector_plate();
+	connector_plate(usb = false);
+
+if (part == "melzi-mount") // yellow-melzi-mount-1x.stl
+	melzi_mount();
+if (part == "orangepizero-mount") // yellow-orangepizero-mount-1x.stl
+	orangepizero_mount();
+if (part == "electronics-spacer") // yellow-electronics-spacer-4x.stl
+	electronics_spacer();
+if (part == "electronics-spacer2") // yellow-electronics-spacer2-1x.stl
+	electronics_spacer(true);
 // }}}
 
 // Hot end and other tools: red. {{{
@@ -222,7 +239,7 @@ if (plate == "probe-tool") { // plate-red-probe-tool.stl
 
 // Clamp tool. {{{
 if (part == "clamp-tool") // red-clamp-tool-1x.stl
-	clamp_tool();
+	clamp_tool(d_tool = 23);
 if (plate == "clamp-tool") { // plate-red-clamp-tool.stl
 	for (x = [-2:2], y = [-6:1]) {
 		translate([x * 33, y * 12, 0])
@@ -230,7 +247,7 @@ if (plate == "clamp-tool") { // plate-red-clamp-tool.stl
 	}
 }
 if (part == "clamp-clamp") // red-clamp-clamp-1x.stl
-	clamp_clamp();
+	clamp_clamp(d_tool = 23);
 if (plate == "clamp-clamp") { // plate-red-clamp-clamp.stl
 	for (x = [-2:2], y = [-6:1]) {
 		translate([x * 33, y * 12, 0])
