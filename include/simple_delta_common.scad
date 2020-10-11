@@ -585,7 +585,7 @@ module hotend_mount(dalekify = false,
 
 			translate([0, 0, z_offset_retainer - 1.5 * layer_height]) {
 				// floor for retainer body
-				translate([0, y_offset + d_hotend_side / 2 - 2, z_offset])
+				translate([0, y_offset + d_hotend_side / 2 - 9, z_offset])
 						cube([l_fan - 5, 7, 2 * layer_height], center = true);
 				translate([0, y_offset - d_large_jhead / 2 + 5, z_offset])
 						cube([l_fan - 18, 4, 2 * layer_height], center = true);

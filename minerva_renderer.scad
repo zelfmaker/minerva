@@ -22,8 +22,11 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 // include the modules required for rendering
 include <minerva.scad>
 
-part = "wire-guide";
+part = "hotend-effector";
 plate = "";
+
+// Test for magnet size.
+//magnet_mount(r_pad = r_pad_effector_magnet_mount, h_pad = 2, relief_only = false, od_magnet = od_magnet2, h_magnet = h_magnet2, d_bearing_with_magnet = d_bearing_with_magnet2);
 
 // Names have the form:
 // <color>-<name>-<quantity>x.<ext>
@@ -202,6 +205,8 @@ if (part == "electronics-spacer2") // yellow-electronics-spacer2-1x.stl
 // Hot end tool body. {{{
 if (part == "hotend-tool") // red-hotend-tool-1x.stl
 	hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = false);
+if (part == "hotend-effector") // red-hotend-effector-0x.stl
+	hotend_effector(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = false);
 if (plate == "hotend-tool") { // plate-red-hotend-tool.stl
 	hotend_tool(headless = true, quickrelease = true, vent = false, dalekify = false, render_thread = true);
 	for (angle = [0:2]) {

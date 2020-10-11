@@ -1353,27 +1353,33 @@ module clamp_clamp(d_tool = 13, h_tool = 8) { // {{{
 	}
 } // }}}
 
-module hotend_effector(quickrelease = true, dalekify = false, vent = false, headless = false) { // {{{
-	difference() {
-		union() {
-			hotend_mount(
-				dalekify = dalekify,
-				quickrelease = quickrelease,
-				vent = vent,
-				headless = headless,
-				render_thread = false
-			);
+module hotend_effector(quickrelease = true, dalekify = false, vent = false, headless = false, render_thread = false) { // {{{
+	y_offset = -5;
+	z_offset = 8;
+	translate([0, 0, t_effector / 2]) {
+		difference() {
+			union() {
+				hotend_mount(
+					dalekify = dalekify,
+					quickrelease = quickrelease,
+					vent = vent,
+					headless = headless,
+					render_thread = render_thread,
+					y_offset = y_offset,
+					z_offset = z_offset
+				);
+				translate([0, 0, -t_effector / 2])
+					effector_base(large = false);
+			}
 
-			effector_base(large = false);
+			// opening at bottom
+			translate([0, 0, 0])
+				cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 0.1, center = true);
+
+			/*translate([0, 0, -t_effector / 2 - 1])
+				rotate([0, 0, 60])
+					effector_shroud_holes(diameter = d_M3_screw / 2 - 0.15, height = t_effector + 1 - 2 * layer_height);*/
 		}
-
-		// opening at bottom
-		translate([0, 0, 0])
-			cylinder(r1 = r1_opening, r2 = r2_opening, h = t_effector + 0.1, center = true);
-
-		/*translate([0, 0, -t_effector / 2 - 1])
-			rotate([0, 0, 60])
-				effector_shroud_holes(diameter = d_M3_screw / 2 - 0.15, height = t_effector + 1 - 2 * layer_height);*/
 	}
 } // }}}
 
