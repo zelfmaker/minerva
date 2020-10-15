@@ -5,6 +5,13 @@ printed and laser cut parts of the machine.
 
 The machine is based on [Phidias, llc's Athena](http://github.com/phidiasllc/athena).
 
+#Design philosophy
+The design of this machine is based on the following principles:
+
+  - As much as possible, use the same type of nuts and bolts everywhere. The chosen value is M3x16. Where a longer bolt was required, M3x30 has been used if possible.
+  - As much as possible, things can be taken apart. This means there are no screws anywhere in the machine. Glue is avoided when possible.
+  - All dimensions are metric.
+
 #How to build
 Build instructions will (hopefully) follow later. Here's a summary.
 
@@ -31,7 +38,7 @@ out on a laser cutter from 5mm plywood. When using a different thickness, the
 
 #Vitamins
 The motors in the machine are NEMA17. Most bolts are M3x16. The longer bolts
-are M3x35. The thick bolts in the idlers are M8x40. Every bolt should have a
+are M3x30. The thick bolts in the idlers are M8x40. Every bolt should have a
 washer on each side without a nut trap.
 
 The carriages are connected using GT2 timing belts. The pulleys on the motors
