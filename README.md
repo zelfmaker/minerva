@@ -1,18 +1,18 @@
-#Minerva
+# Minerva
 Minerva is a general purpose robot, including 3-D printer, designed and
 produced by De Zelfmaker.  This repository contains the source files for the
 printed and laser cut parts of the machine.
 
 The machine is based on [Phidias, llc's Athena](http://github.com/phidiasllc/athena).
 
-#Design philosophy
+# Design philosophy
 The design of this machine is based on the following principles:
 
   - As much as possible, use the same type of nuts and bolts everywhere. The chosen value is M3x16. Where a longer bolt was required, M3x30 has been used if possible.
   - As much as possible, things can be taken apart. This means there are no screws anywhere in the machine. Glue is avoided when possible.
   - All dimensions are metric.
 
-#How to build
+# How to build
 Build instructions will (hopefully) follow later. Here's a summary.
 
 The machine consists of printed parts, laser cut wooden parts and so called
@@ -36,7 +36,7 @@ contain instructions on the required changes. The shapes are meant to be cut
 out on a laser cutter from 5mm plywood. When using a different thickness, the
 "wood" variable in minerva\_renderer.scad should be adjusted.
 
-#Vitamins
+# Vitamins
 The motors in the machine are NEMA17. Most bolts are M3x16. The longer bolts
 are M3x30. The thick bolts in the idlers are M8x40. Every bolt should have a
 washer on each side without a nut trap.
