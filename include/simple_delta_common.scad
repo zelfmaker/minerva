@@ -531,8 +531,8 @@ module hotend_mount(dalekify = false,
 						}
 
 						// Cut off front so retainer will fit.
-						translate([0, d_large_jhead, 0])
-							cube([d_large_jhead + 2 * d_M3_screw, d_large_jhead, h_groove_offset_jhead + 5], center = true);
+						translate([0, d_large_jhead - .001, 0])
+							cube([d_large_jhead + 3 * d_M3_screw, d_large_jhead, h_groove_offset_jhead + 5], center = true);
 
 						if (quickrelease) {
 							// Bowden sheath
@@ -587,8 +587,12 @@ module hotend_mount(dalekify = false,
 				// floor for retainer body
 				translate([0, y_offset + d_hotend_side / 2 - 9, z_offset])
 						cube([l_fan - 5, 7, 2 * layer_height], center = true);
-				translate([0, y_offset - d_large_jhead / 2 + 5, z_offset])
-						cube([l_fan - 18, 4, 2 * layer_height], center = true);
+				intersection() {
+					translate([0, y_offset - d_large_jhead / 2 + 5, z_offset])
+							cube([l_fan - 10, 8, 2 * layer_height], center = true);
+					translate([0, y_offset, z_offset - 3])
+						cylinder(d = l_fan - 10, h = 6);
+				}
 			}
 			translate([0, y_offset + d_large_jhead / 2 + 2, z_offset_retainer + h_groove_offset_jhead + h_groove_jhead + layer_height + z_offset])
 				cube([l_fan - 5, 8, 2 * layer_height], center = true);

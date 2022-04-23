@@ -22,7 +22,7 @@ along with this program. If not, see <http://www.gnu.org/licenses/>.
 // include the modules required for rendering
 include <minerva.scad>
 
-part = "hotend-effector";
+part = "hotend-tool";
 plate = "";
 
 // Test for magnet size.
